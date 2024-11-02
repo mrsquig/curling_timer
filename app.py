@@ -178,7 +178,7 @@ def check_server():
     return False
 
 def start_server():
-  subprocess.Popen(['python', 'api.py'])
+  subprocess.Popen([sys.executable, 'api.py'])
 
 def stop_server():
   response = requests.post("http://127.0.0.1:5000/shutdown", json={"time": 0})
