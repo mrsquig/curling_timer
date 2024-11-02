@@ -34,4 +34,9 @@ An example PyGame front end is provided in `app.py` Simply run to start the fron
 python app.py
 ```
 
-If the server is not running, it will be started at run-time.
+If the server is not running, it will be started at run-time. The front-end has the following key bindings:
+|Key|Action|
+|---|------|
+|r| Reset timer|
+|q| Quit front end|
+|f| Toggle full screen|

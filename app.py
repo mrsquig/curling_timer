@@ -43,6 +43,7 @@ class IceClock:
     # Set the start time as the current time
     self.start_time = datetime.datetime.now()
     self.running = True
+    self.fullscreen = False
 
   def update_time(self):    
     try:
@@ -84,6 +85,20 @@ class IceClock:
     # Update the display
     pygame.display.flip()
 
+  def key_down(self, event):
+    if event.key == pygame.K_r:
+      requests.get('http://127.0.0.1:5000/reset')
+      return
+    elif event.key == pygame.K_q:
+      pygame.quit()
+      return
+    elif event.key == pygame.K_f:
+      self.fullscreen = not self.fullscreen
+      if self.fullscreen:
+        self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+      else:
+        self.screen = pygame.display.set_mode((self.width, self.height))
+
   def run(self):
     # Main loop
     while self.running:
@@ -92,6 +107,8 @@ class IceClock:
           stop_server()
           pygame.quit()          
           sys.exit()
+        if event.type == pygame.KEYDOWN:
+          self.key_down(event)
 
       self.screen.fill(Color.SCREEN_BG.value)
       self.update_time()
