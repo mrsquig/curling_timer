@@ -1,14 +1,28 @@
-import pygame
+import os
 import sys
-import time
-import datetime
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
+
 from enum import Enum
 import subprocess
+import datetime
 import requests
+import argparse
+import pygame
+import time
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('curling_timer')
+logger.setLevel(logging.INFO)
+
+HOST_IP = None
+SERVER_PORT = None
+SERVER_PROCESS = None
 
 class Color(Enum):
   SCREEN_BG = (0, 0, 0)
-  TEXT = (255, 255, 255)
+  TEXT = (255, 255, 255)  
+  TEXT_END_MINUS1 = (255, 204, 42)
+  TEXT_LASTEND = (160, 80, 40)
   BAR_FG = (40, 80, 160)
   BAR_BG = (50, 50, 50)
   OT = (160, 80, 40)
@@ -63,6 +77,10 @@ class IceClock:
                                 self.bar_width, 
                                 self.bar_height)
 
+  @property
+  def num_ends(self):
+    return get_config("num_ends")
+
   def update_time(self):
     '''
     Get the latest game time information through the REST API
@@ -70,7 +88,7 @@ class IceClock:
     '''
 
     try:
-      response = requests.get('http://127.0.0.1:5000/game_times')
+      response = requests.get('http://{:s}:{:s}/game_times'.format(HOST_IP, SERVER_PORT))
     except Exception as e:
       return f"Error: {e}"
     
@@ -83,16 +101,37 @@ class IceClock:
     self.screen.blit(self.image, self.image_rect)
 
   def render_timer(self, over_time=False):
-    color = Color.TEXT.value if not over_time else Color.OT.value
+    if self._end_number < self.num_ends - 1:
+      color = Color.TEXT.value
+    elif self._end_number == self.num_ends - 1:
+      color = Color.TEXT_END_MINUS1.value
+    elif self._end_number == self.num_ends:
+      color = Color.TEXT_LASTEND.value
+    else:
+      color = Color.OT.value
+
     text = self.timer_font.render("{:02d}:{:02d}".format(self._minutes, self._seconds), True, color)
     text_rect = text.get_rect(center=(self.width // 2, self.height // 2 + 64))
-    self.screen.blit(text, text_rect)
+
+    # Always display the timer during the game and blink the timer on for one second
+    # and off for one second when over time
+    if not over_time or self._seconds % 2:
+      self.screen.blit(text, text_rect)
 
   def render_end_number(self, over_time=False):
-    if not over_time:
-      text = self.end_font.render("{:d}".format(self._end_number), True, Color.TEXT.value)
+    if self._end_number < self.num_ends - 1:
+      color = Color.TEXT.value
+    elif self._end_number == self.num_ends - 1:
+      color = Color.TEXT_END_MINUS1.value
+    elif self._end_number == self.num_ends:
+      color = Color.TEXT_LASTEND.value
     else:
-      text = self.end_font.render("OT", True, Color.OT.value)
+      color = Color.OT.value
+
+    if not over_time:
+      text = self.end_font.render("{:d}".format(self._end_number), True, color)
+    else:
+      text = self.end_font.render("OT", True, color)
 
     text_rect = text.get_rect(center=(self.width // 2, self.height // 2 - 64))
     self.screen.blit(text, text_rect)
@@ -134,14 +173,23 @@ class IceClock:
 
     if event.key == pygame.K_r:
       # R key -- reset the timer
-      requests.get('http://127.0.0.1:5000/reset')
+      logger.debug("User requested reset")
+      requests.get('http://{:s}:{:s}/reset'.format(HOST_IP, SERVER_PORT))
       return
     elif event.key == pygame.K_q:
       # Q key -- quit the front end
-      pygame.quit()
+      logger.debug("User requested exit")
+      try:
+        # If the server was started with the front end, then lets try to shut it down too
+        SERVER_PROCESS.terminate()
+        logger.info("Shut down server successfully.")
+      except:
+        logger.warning("Could not terminate server process!")
+      self.teardown()
       return
     elif event.key == pygame.K_f:
-      # F key -- toggle full screen
+      # F key -- toggle fullscreen
+      logger.debug("User requested fullscreen")
       self.fullscreen = not self.fullscreen      
       if self.fullscreen:
         self.width = self.fs_width
@@ -151,50 +199,65 @@ class IceClock:
         self.width = self.window_width
         self.height = self.window_height
         self.screen = pygame.display.set_mode((self.width, self.height))
-      self.init_display()
+      self.init_UI()
 
   def run(self):
     # Main loop
     while self.running:
       for event in pygame.event.get():
         if event.type == pygame.QUIT:
-          stop_server()
-          pygame.quit()          
-          sys.exit()
+          self.teardown()
         if event.type == pygame.KEYDOWN:
           self.key_down_callback(event)
 
       self.update_time()
-
-      over_time = self._end_number > get_config("num_ends")
+      over_time = self._end_number > self.num_ends
       self.render(over_time)
       time.sleep(1)
 
+  def teardown(self):
+    '''
+    Exit the front end and cleanup as needed.
+    '''
+    pygame.quit()
+    sys.exit()
+
 def check_server():  
   try:
-    response = requests.get('http://127.0.0.1:5000/version')
+    response = requests.get('http://{:s}:{:s}/version'.format(HOST_IP, SERVER_PORT))
     return response.status_code == 200
   except requests.ConnectionError:
     return False
 
-def start_server():
-  subprocess.Popen([sys.executable, 'api.py'])
-
-def stop_server():
-  response = requests.post("http://127.0.0.1:5000/shutdown", json={"time": 0})
+def start_server(host="127.0.0.1", port="5000"):
+  return subprocess.Popen([sys.executable, 'api.py', "--host", host, "--port", port])
 
 def get_config(key):
   try:
-    response = requests.get('http://127.0.0.1:5000/config?key={:s}'.format(key))
+    response = requests.get('http://{:s}:{:s}/config?key={:s}'.format(HOST_IP, SERVER_PORT, key))
   except Exception as e:
     return f"Error: {e}"
 
   return response.json().get(key)
 
 if __name__ == "__main__":
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--host", default="127.0.0.1", help="host IP of backend server")
+  parser.add_argument("--port", default="5000", help="port that backend server is listening on")
+  args = parser.parse_args()
+
+  HOST_IP = args.host
+  SERVER_PORT = args.port
+
   # Start the server if it is not already running
   if not check_server():
-    start_server()
+    logger.info("Could not find backend server. Attempting to start backend server...")
+    SERVER_PROCESS = start_server(host=HOST_IP, port=SERVER_PORT)
+    if check_server():
+      logger.info("Started backend server successfully -- PID: {:d}".format(SERVER_PROCESS.pid))
+    else:
+      logger.error("Could not start backend server!")
+      sys.exit(1)
 
   # Start the front end
   clock = IceClock()

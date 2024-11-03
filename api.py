@@ -1,8 +1,15 @@
 from flask import Flask, jsonify, request
 from datetime import datetime
-import sys
 from config import ConfigValue
-import signal
+import argparse
+import time
+import sys
+
+try:
+  USING_WAITRESS = True
+  import waitress
+except ImportError:
+  USING_WAITRESS = False
 
 def timestamp():
   return datetime.now().timestamp()
@@ -62,15 +69,13 @@ def get_times():
 
   return jsonify(times), 200
 
-@app.route('/shutdown', methods=['POST'])
-def shutdown():
-  shutdown_time = request.json.get("time")
-  if shutdown_time < timestamp():    
-    func = request.environ.get('werkzeug.server.shutdown')
-    if func is None:      
-      sys.exit(0)
-    func()
-  return jsonify({"message": "Server is shutting down..."})
-
 if __name__ == '__main__':
-  app.run(port=5000)
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--host", default="0.0.0.0", help="host IP to bind to")
+  parser.add_argument("--port", default="5000", type=int, help="port for server to listen on")
+  args = parser.parse_args()
+
+  if USING_WAITRESS:
+    waitress.serve(app, host='0.0.0.0', port=args.port)
+  else:  
+    app.run(port=args.port)

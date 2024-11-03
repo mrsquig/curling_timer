@@ -7,6 +7,7 @@ The timer application uses a Flask RESTful API on the backend to setup the confi
 - Flask
 - Requests
 - PyGame
+- Waitress (optional)
 
 
 ## Back end
@@ -14,6 +15,8 @@ The back end of the timer is written in `api.py`. To start the server:
 ```
 python api.py
 ```
+
+The server will start with Waitress if installed, or the Flask development server otherwise. The host to bind to can be specified with the `--host` flag, and the port with the `--port` flag. The defaults are `0.0.0.0` and `5000`. The value of `0.0.0.0` for the host IP allows any device on the network to communicate with the server.
 
 The following API routes are supported:
 
@@ -33,6 +36,8 @@ An example PyGame front end is provided in `app.py` Simply run to start the fron
 ```
 python app.py
 ```
+
+The host IP of the backend server can be specified with the `--host` flag, and the port with the `--port` flag. The defaults are `127.0.0.1` and `5000`.
 
 If the server is not running, it will be started at run-time. The front-end has the following key bindings:
 |Key|Action|
