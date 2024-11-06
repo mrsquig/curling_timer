@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from datetime import datetime
 from config import ConfigValue
 import argparse
@@ -22,6 +22,18 @@ app_config = {
     "start_timestamp": ConfigValue(timestamp(), int),
     "count_direction": ConfigValue(-1, int),
 }
+
+@app.route('/', methods=['GET','POST'])
+def index(): 
+  if request.method == 'POST':
+    app_config["num_ends"].value = request.form.get('num_ends')
+    app_config["time_per_end"].value = request.form.get('time_per_end')
+    app_config["count_direction"].value = request.form.get('count_direction')
+
+  data = {key: value.value for key,value in app_config.items()}
+  times, status = get_times()
+  data.update(times.json)
+  return render_template('index.html', **data)
 
 @app.route('/version', methods=['GET'])
 def get_version():

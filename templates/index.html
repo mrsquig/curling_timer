@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>Curling time</title>
+</head>
+<body>
+    <h1>Curling timer configuration</h1>
+    <div class="card">
+        <form method="POST">
+            <label for="num_ends">Number of ends:</label><br>
+            <input type="text" id="num_ends" name="num_ends" value="{{num_ends}}" required><br>
+            
+            <label for="time_per_end">Time per end (sec):</label><br>
+            <input type="text" id="time_per_end" name="time_per_end" value="{{time_per_end}}" required>
+
+            <fieldset>
+                <legend>Timer direction:</legend>
+                {% if count_direction == -1 %}
+                <label for="countdown">Count down</label>
+                <input type="radio" id="countdown" name="count_direction" value="-1" checked/>
+                <label for="countup">Count up</label>
+                <input type="radio" id="countup" name="count_direction" value="1"  />
+                {% else %}            
+                <label for="countdown">Count down</label>
+                <input type="radio" id="countdown" name="count_direction" value="-1" />
+                <label for="countup">Count up</label>
+                <input type="radio" id="countup" name="count_direction" value="1" checked />
+                {% endif %}
+            </fieldset>
+            
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <div>
+            <h3>Current timer value</h3>
+            <span>{{"{:02d}:{:02d}:{:02d}".format(hours, minutes,seconds)}}</span>
+        </div>
+        <div>
+            <h3>Target end</h3>
+            <span>End number: {{ end_number }}</span><br />
+            <span>Percentage of complete of target end: {{ "{:0.2f}".format(100*end_percentage) }}</span><br />
+            <span>Overtime: {{ overtime }}</span><br />
+        </div>
+    </div>
+
+</body>
+</html>
