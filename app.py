@@ -138,12 +138,17 @@ class IceClock:
     else:
       color = Color.OT.value
 
-    text = self.timer_font.render("{:02d}:{:02d}:{:02d}".format(self._hours, self._minutes, self._seconds), True, color)
-    text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))
+    if self._end_number != self.num_ends:
+      text = self.timer_font.render("{:02d}:{:02d}:{:02d}".format(self._hours, self._minutes, self._seconds), True, color)
+      text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))
 
-    # Always display the timer during the game and blink the timer on for one second
-    # and off for one second when over time
-    if not over_time or self._seconds % 2:
+      # Always display the timer during the game and blink the timer on for one second
+      # and off for one second when over time
+      if not over_time or self._seconds % 2:
+        self.screen.blit(text, text_rect)
+    else:      
+      text = self.timer_font.render("LAST END", True, color)
+      text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))
       self.screen.blit(text, text_rect)
 
   def render_end_number(self, over_time=False):
@@ -163,11 +168,11 @@ class IceClock:
       
       text = self.timer_font.render("/{:d}".format(self.num_ends), True, color)
       text_rect = text.get_rect(center=(self.center["x"] + 3*self.width // 32, self.center["y"] - 3*self.height // 16))
-      self.screen.blit(text, text_rect)
+      self.screen.blit(text, text_rect)      
     else:
       text = self.end_font.render("OT", True, color)
       text_rect = text.get_rect(center=(self.center["x"], self.center["y"] - 3*self.height // 16))
-      self.screen.blit(text, text_rect)
+      self.screen.blit(text, text_rect)    
 
   def render_end_progress_bar(self, over_time=False):
     for rect in self.bar_rects:
