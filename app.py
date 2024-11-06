@@ -171,7 +171,7 @@ class IceClock:
 
   def render_end_progress_bar(self, over_time=False):
     for rect in self.bar_rects:
-      pygame.draw.rect(self.screen, Color.BAR_BG.value, rect)
+      pygame.draw.rect(self.screen, Color.BAR_BG.value, rect, border_radius = self.height//50)
     
     if over_time:
       filled_height = int(self.bar_height)
@@ -185,13 +185,13 @@ class IceClock:
       filled_rect = pygame.Rect(rect.x, rect.y + self.bar_height - filled_height,
                                 self.bar_width, filled_height)
       color = Color.BAR_FG.value if not over_time else Color.OT.value
-      pygame.draw.rect(self.screen, color, filled_rect)
+      pygame.draw.rect(self.screen, color, filled_rect, border_radius = self.height//50)
 
       # Add dividers to progress bars for each stone
       for i in range(NUM_STONES_PER_END):
-        test = pygame.Rect(rect.x, rect.y + i*self.bar_height//8,
+        stone_div = pygame.Rect(rect.x, rect.y + i*self.bar_height//8,
                            self.bar_width, self.height//100)
-        pygame.draw.rect(self.screen, Color.SCREEN_BG.value, test)
+        pygame.draw.rect(self.screen, Color.SCREEN_BG.value, stone_div)
 
 
   def render(self, over_time=False):
