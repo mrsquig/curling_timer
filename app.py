@@ -3,6 +3,7 @@ import sys
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 
 from enum import Enum
+import collections
 import subprocess
 import datetime
 import requests
@@ -17,6 +18,12 @@ logger.setLevel(logging.INFO)
 HOST_IP = None
 SERVER_PORT = None
 SERVER_PROCESS = None
+CONFIG_UPDATE_TIME_LIMIT = 30
+NUM_STONES_PER_END = 8
+config_default = lambda: (None, None)
+
+def timestamp():
+  return datetime.datetime.now().timestamp()
 
 class Color(Enum):
   SCREEN_BG = (0, 0, 0)
@@ -28,9 +35,11 @@ class Color(Enum):
   OT = (160, 80, 40)
 
 class IceClock:
-  def __init__(self, width=1024, height=512):
+  def __init__(self, width=1280, height=720):
     # Initialize Pygame
     pygame.init()
+
+    self._config = collections.defaultdict(config_default)
 
     # Setup the dimensions for window mode and full-screen mode
     # We need to do this before setting up the window so that we 
@@ -61,25 +70,43 @@ class IceClock:
     This should be called whenever the screen size changes
     '''
     # Set up the fonts
-    self.timer_font = pygame.font.Font(None, 128)
-    self.end_font = pygame.font.Font(None, 256)
+    #courier = pygame.font.match_font("couriernew", bold=True)
+    jetbrains = os.path.join("ttf", "JetBrainsMono-Medium.ttf")
+    self.timer_font = pygame.font.Font(jetbrains, 3*self.height // 16)
+    self.end_font = pygame.font.Font(jetbrains,  self.height // 2)
 
-    # Set up club logo
-    self.original_image = pygame.image.load("./logo.png")
-    self.image = pygame.transform.scale(self.original_image, (256, 256))
-    self.image_rect = self.image.get_rect(center=(self.width // 2 - 256 - 50, self.height // 2))
+    # Set up progress bar(s)
+    self.bar_width = self.width // 8
+    self.bar_height = 7*self.height // 8
+    bar_x_offset = 13*self.width // 32
+    bar_x = ((self.width - self.bar_width) // 2 - bar_x_offset,
+             (self.width - self.bar_width) // 2 + bar_x_offset)
+    self.bar_rects = [pygame.Rect(x, (self.height - self.bar_height)//2, 
+                                self.bar_width, self.bar_height) for x in bar_x]
 
-    # Set up progress bar
-    self.bar_width = 100
-    self.bar_height = 256
-    self.bar_rect = pygame.Rect(self.width // 2 + 256, 
-                                (self.height - self.bar_height)//2, 
-                                self.bar_width, 
-                                self.bar_height)
+  @property
+  def center(self):
+    return {"x": self.width//2, "y": self.height//2}
 
   @property
   def num_ends(self):
-    return get_config("num_ends")
+    if self._config["num_ends"][0] is None or (timestamp() - self._config["num_ends"][0]) > CONFIG_UPDATE_TIME_LIMIT:
+      value = get_config("num_ends")
+      self._config["num_ends"] = (timestamp(), value)
+
+    return self._config["num_ends"][1]
+
+  @property
+  def time_per_end(self):
+    if self._config["time_per_end"][0] is None or (timestamp() - self._config["time_per_end"][0]) > CONFIG_UPDATE_TIME_LIMIT:
+      value = get_config("time_per_end")
+      self._config["time_per_end"] = (timestamp(), value)
+
+    return self._config["time_per_end"][1]
+
+  @property
+  def total_time(self):
+    return self.num_ends * self.time_per_end
 
   def update_time(self):
     '''
@@ -92,6 +119,7 @@ class IceClock:
     except Exception as e:
       return f"Error: {e}"
     
+    self._hours = response.json().get("hours")
     self._minutes = response.json().get("minutes")
     self._seconds = response.json().get("seconds")
     self._end_number = response.json().get("end_number")
@@ -110,8 +138,8 @@ class IceClock:
     else:
       color = Color.OT.value
 
-    text = self.timer_font.render("{:02d}:{:02d}".format(self._minutes, self._seconds), True, color)
-    text_rect = text.get_rect(center=(self.width // 2, self.height // 2 + 64))
+    text = self.timer_font.render("{:02d}:{:02d}:{:02d}".format(self._hours, self._minutes, self._seconds), True, color)
+    text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))
 
     # Always display the timer during the game and blink the timer on for one second
     # and off for one second when over time
@@ -130,25 +158,41 @@ class IceClock:
 
     if not over_time:
       text = self.end_font.render("{:d}".format(self._end_number), True, color)
+      text_rect = text.get_rect(center=(self.center["x"] - 2*self.width // 32, self.center["y"] - 3*self.height // 16))
+      self.screen.blit(text, text_rect)
+      
+      text = self.timer_font.render("/{:d}".format(self.num_ends), True, color)
+      text_rect = text.get_rect(center=(self.center["x"] + 3*self.width // 32, self.center["y"] - 3*self.height // 16))
+      self.screen.blit(text, text_rect)
     else:
       text = self.end_font.render("OT", True, color)
-
-    text_rect = text.get_rect(center=(self.width // 2, self.height // 2 - 64))
-    self.screen.blit(text, text_rect)
+      text_rect = text.get_rect(center=(self.center["x"], self.center["y"] - 3*self.height // 16))
+      self.screen.blit(text, text_rect)
 
   def render_end_progress_bar(self, over_time=False):
-    pygame.draw.rect(self.screen, Color.BAR_BG.value, self.bar_rect)
+    for rect in self.bar_rects:
+      pygame.draw.rect(self.screen, Color.BAR_BG.value, rect)
     
     if over_time:
       filled_height = int(self.bar_height)
     else:
-      # It is 1 - percentage so that the bar counts down instead of up    
-      filled_height = int(self.bar_height * (1 - self._end_percentage))
+      # It is 1 - percentage so that the bar counts down instead of up
+      # Round to an integer multiple of the number of stones per end
+      percentage = int(NUM_STONES_PER_END*self._end_percentage)/NUM_STONES_PER_END
+      filled_height = int(self.bar_height * (1 - percentage))
 
-    filled_rect = pygame.Rect(self.bar_rect.x, self.bar_rect.y + self.bar_height - filled_height,
-                              self.bar_width, filled_height)
-    color = Color.BAR_FG.value if not over_time else Color.OT.value
-    pygame.draw.rect(self.screen, color, filled_rect)
+    for rect in self.bar_rects:
+      filled_rect = pygame.Rect(rect.x, rect.y + self.bar_height - filled_height,
+                                self.bar_width, filled_height)
+      color = Color.BAR_FG.value if not over_time else Color.OT.value
+      pygame.draw.rect(self.screen, color, filled_rect)
+
+      # Add dividers to progress bars for each stone
+      for i in range(NUM_STONES_PER_END):
+        test = pygame.Rect(rect.x, rect.y + i*self.bar_height//8,
+                           self.bar_width, self.height//100)
+        pygame.draw.rect(self.screen, Color.SCREEN_BG.value, test)
+
 
   def render(self, over_time=False):
     '''
@@ -158,7 +202,6 @@ class IceClock:
     '''
     
     self.screen.fill(Color.SCREEN_BG.value)
-    self.render_club_logo()
     self.render_end_progress_bar(over_time)
     self.render_timer(over_time)
     self.render_end_number(over_time)
