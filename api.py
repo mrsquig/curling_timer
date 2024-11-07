@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request, render_template
 from datetime import datetime
-from config import ConfigValue
+from config import ConfigValue, bool_type
 import argparse
 import time
 import sys
@@ -21,6 +21,7 @@ app_config = {
     "num_ends": ConfigValue(8, int),
     "start_timestamp": ConfigValue(timestamp(), int),
     "count_direction": ConfigValue(-1, int),
+    "allow_overtime": ConfigValue(False, bool_type),
 }
 
 @app.route('/', methods=['GET','POST'])
@@ -29,6 +30,7 @@ def index():
     app_config["num_ends"].value = request.form.get('num_ends')
     app_config["time_per_end"].value = request.form.get('time_per_end')
     app_config["count_direction"].value = request.form.get('count_direction')
+    app_config["allow_overtime"].value = request.form.get("allow_overtime")
 
   data = {key: value.value for key,value in app_config.items()}
   times, status = get_times()
@@ -82,6 +84,11 @@ def get_times():
 
   # Initialize results dictionary
   times = {}
+  times["uptime"] = uptime
+
+  # Copy number of ends and time per end into dictionary to return
+  times["num_ends"] = app_config["num_ends"].value
+  times["time_per_end"] = app_config["time_per_end"].value
 
   # End number and percentage are always based on the uptime of the timer
   times["end_number"] = uptime // app_config["time_per_end"].value + 1
@@ -91,9 +98,11 @@ def get_times():
   # hours, minutes, and seconds depending on if we're counting down or up
   times["total_time"] = app_config["time_per_end"].value * app_config["num_ends"].value
   game_time = times["total_time"] - uptime if app_config["count_direction"].value < 0 else uptime
-
+  
+  # Determine if we're over time or not. If allow_overtime is false, then the over time flag will always be false
+  times["overtime"] = uptime > times["total_time"] and app_config["allow_overtime"].value
+  
   # If we're over time, then return how far over time we are
-  times["overtime"] = uptime > times["total_time"]
   if times["overtime"] and app_config["count_direction"].value < 0:
     game_time = game_time*-1
 

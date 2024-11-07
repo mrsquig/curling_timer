@@ -17,18 +17,19 @@
             <input type="text" id="time_per_end" name="time_per_end" value="{{time_per_end}}" required>
 
             <fieldset>
-                <legend>Timer direction:</legend>
-                {% if count_direction == -1 %}
+                <legend>Allow overtime:</legend>                
+                <label for="allow_ot_true">True</label>
+                <input type="radio" id="allow_ot_true" name="allow_overtime" value="1" {% if allow_overtime %} checked {% endif %}/>
+                <label for="allow_ot_false">False</label>
+                <input type="radio" id="allow_ot_false" name="allow_overtime" value="0" {% if not allow_overtime %} checked {% endif %} />
+            </fieldset>
+
+            <fieldset>
+                <legend>Timer direction:</legend>                
                 <label for="countdown">Count down</label>
-                <input type="radio" id="countdown" name="count_direction" value="-1" checked/>
+                <input type="radio" id="countdown" name="count_direction" value="-1" {% if count_direction == -1 %} checked {% endif %}/>
                 <label for="countup">Count up</label>
-                <input type="radio" id="countup" name="count_direction" value="1"  />
-                {% else %}            
-                <label for="countdown">Count down</label>
-                <input type="radio" id="countdown" name="count_direction" value="-1" />
-                <label for="countup">Count up</label>
-                <input type="radio" id="countup" name="count_direction" value="1" checked />
-                {% endif %}
+                <input type="radio" id="countup" name="count_direction" value="1"  {% if count_direction == 1 %} checked {% endif %}/>
             </fieldset>
             
             <button type="submit">Submit</button>
