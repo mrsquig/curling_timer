@@ -106,7 +106,7 @@ class IceClock:
 
   @property
   def total_time(self):
-    return self.num_ends * self.time_per_end
+    return self._num_ends * self._time_per_end
 
   def update_time(self):
     '''
@@ -124,72 +124,82 @@ class IceClock:
     self._seconds = response.json().get("seconds")
     self._end_number = response.json().get("end_number")
     self._end_percentage = response.json().get("end_percentage")
+    self._overtime = response.json().get("overtime")
+    self._num_ends = response.json().get("num_ends")
+    self._time_per_end = response.json().get("time_per_end")
+    self._uptime = response.json().get("uptime")
 
   def render_club_logo(self):
     self.screen.blit(self.image, self.image_rect)
 
-  def render_timer(self, over_time=False):
-    if self._end_number < self.num_ends - 1:
+  def render_timer(self):
+    if self._end_number < self._num_ends - 1:
       color = Color.TEXT.value
-    elif self._end_number == self.num_ends - 1:
+    elif self._end_number == self._num_ends - 1:
       color = Color.TEXT_END_MINUS1.value
-    elif self._end_number == self.num_ends:
+    elif self._end_number == self._num_ends:
       color = Color.TEXT_LASTEND.value
     else:
       color = Color.OT.value
 
-    if self._end_number != self.num_ends:
+    is_last_end = self._end_number >= self._num_ends
+    if not is_last_end or self._overtime:
+      # Always display the timer during the game unless it is the last end or if over time is allowed
       text = self.timer_font.render("{:02d}:{:02d}:{:02d}".format(self._hours, self._minutes, self._seconds), True, color)
       text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))
 
-      # Always display the timer during the game and blink the timer on for one second
-      # and off for one second when over time
-      if not over_time or self._seconds % 2:
+      # Blink the timer on for one second and off for one second when over time
+      if not self._overtime or self._seconds % 2:
         self.screen.blit(text, text_rect)
-    else:      
+    else:
       text = self.timer_font.render("LAST END", True, color)
       text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))
       self.screen.blit(text, text_rect)
 
-  def render_end_number(self, over_time=False):
-    if self._end_number < self.num_ends - 1:
+  def render_end_number(self):
+    if self._end_number < self._num_ends - 1:
       color = Color.TEXT.value
-    elif self._end_number == self.num_ends - 1:
+    elif self._end_number == self._num_ends - 1:
       color = Color.TEXT_END_MINUS1.value
-    elif self._end_number == self.num_ends:
+    elif self._end_number == self._num_ends:
       color = Color.TEXT_LASTEND.value
     else:
       color = Color.OT.value
 
-    if not over_time:
-      text = self.end_font.render("{:d}".format(self._end_number), True, color)
+    if not self._overtime:
+      end_num = self._end_number if self._end_number < self._num_ends else self._num_ends
+      text = self.end_font.render("{:d}".format(end_num), True, color)
       text_rect = text.get_rect(center=(self.center["x"] - 2*self.width // 32, self.center["y"] - 3*self.height // 16))
       self.screen.blit(text, text_rect)
       
-      text = self.timer_font.render("/{:d}".format(self.num_ends), True, color)
+      text = self.timer_font.render("/{:d}".format(self._num_ends), True, color)
       text_rect = text.get_rect(center=(self.center["x"] + 3*self.width // 32, self.center["y"] - 3*self.height // 16))
-      self.screen.blit(text, text_rect)      
+      self.screen.blit(text, text_rect)
     else:
       text = self.end_font.render("OT", True, color)
       text_rect = text.get_rect(center=(self.center["x"], self.center["y"] - 3*self.height // 16))
-      self.screen.blit(text, text_rect)    
+      self.screen.blit(text, text_rect)
 
-  def render_end_progress_bar(self, over_time=False):
+  def render_end_progress_bar(self):
     for rect in self.bar_rects:
       pygame.draw.rect(self.screen, Color.BAR_BG.value, rect, border_radius = self.height//50)
     
-    if over_time:
+    # Set the height of the progress bar
+    # It is 1 - percentage so that the bar counts down instead of up
+    # Round to an integer multiple of the number of stones per end
+    percentage = int(NUM_STONES_PER_END*self._end_percentage)/NUM_STONES_PER_END
+    filled_height = int(self.bar_height * (1 - percentage))
+    if self._overtime:
+      # Timer is expired and over time is allowed
       filled_height = int(self.bar_height)
-    else:
-      # It is 1 - percentage so that the bar counts down instead of up
-      # Round to an integer multiple of the number of stones per end
-      percentage = int(NUM_STONES_PER_END*self._end_percentage)/NUM_STONES_PER_END
-      filled_height = int(self.bar_height * (1 - percentage))
+    elif self._end_number > self._num_ends:
+      # Timer is expired, but over time is not allowed
+      filled_height = 0    
 
     for rect in self.bar_rects:
       filled_rect = pygame.Rect(rect.x, rect.y + self.bar_height - filled_height,
                                 self.bar_width, filled_height)
-      color = Color.BAR_FG.value if not over_time else Color.OT.value
+      color = Color.BAR_FG.value if not self._overtime else Color.OT.value
       pygame.draw.rect(self.screen, color, filled_rect, border_radius = self.height//50)
 
       # Add dividers to progress bars for each stone
@@ -199,17 +209,15 @@ class IceClock:
         pygame.draw.rect(self.screen, Color.SCREEN_BG.value, stone_div)
 
 
-  def render(self, over_time=False):
+  def render(self):
     '''
     Render all UI elements to the PyGame window
-    The variable over_time designates if the current game is over time, which allows
-    UI elements to react to this.
     '''
     
     self.screen.fill(Color.SCREEN_BG.value)
-    self.render_end_progress_bar(over_time)
-    self.render_timer(over_time)
-    self.render_end_number(over_time)
+    self.render_end_progress_bar()
+    self.render_timer()
+    self.render_end_number()
 
     # Update the display
     pygame.display.flip()
@@ -259,8 +267,7 @@ class IceClock:
           self.key_down_callback(event)
 
       self.update_time()
-      over_time = self._end_number > self.num_ends
-      self.render(over_time)
+      self.render()
       time.sleep(1)
 
   def teardown(self):
