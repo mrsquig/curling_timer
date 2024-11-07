@@ -15,3 +15,7 @@ class ConfigValue(dict):
 
   def __repr__(self):
     return str(self.value)
+
+# Helper function for converting values to an int before the call to bool()
+# This is used for handling values that begin as strings but must be Booleans
+bool_type = lambda x: bool(int(x))    
