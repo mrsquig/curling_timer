@@ -20,7 +20,6 @@ SERVER_PORT = None
 SERVER_PROCESS = None
 CONFIG_UPDATE_TIME_LIMIT = 30
 NUM_STONES_PER_END = 8
-config_default = lambda: (None, None)
 
 def timestamp():
   return datetime.datetime.now().timestamp()
@@ -38,8 +37,6 @@ class IceClock:
   def __init__(self, width=1280, height=720):
     # Initialize Pygame
     pygame.init()
-
-    self._config = collections.defaultdict(config_default)
 
     # Setup the dimensions for window mode and full-screen mode
     # We need to do this before setting up the window so that we 
@@ -89,20 +86,13 @@ class IceClock:
     return {"x": self.width//2, "y": self.height//2}
 
   @property
-  def num_ends(self):
-    if self._config["num_ends"][0] is None or (timestamp() - self._config["num_ends"][0]) > CONFIG_UPDATE_TIME_LIMIT:
-      value = get_config("num_ends")
-      self._config["num_ends"] = (timestamp(), value)
+  def config(self):
+    try:
+      response = requests.get('http://{:s}:{:s}/config'.format(HOST_IP, SERVER_PORT))
+    except Exception as e:
+      return f"Error: {e}"
 
-    return self._config["num_ends"][1]
-
-  @property
-  def time_per_end(self):
-    if self._config["time_per_end"][0] is None or (timestamp() - self._config["time_per_end"][0]) > CONFIG_UPDATE_TIME_LIMIT:
-      value = get_config("time_per_end")
-      self._config["time_per_end"] = (timestamp(), value)
-
-    return self._config["time_per_end"][1]
+    return response.json()
 
   @property
   def total_time(self):
@@ -286,14 +276,6 @@ def check_server():
 
 def start_server(host="127.0.0.1", port="5000"):
   return subprocess.Popen([sys.executable, 'api.py', "--host", host, "--port", port])
-
-def get_config(key):
-  try:
-    response = requests.get('http://{:s}:{:s}/config?key={:s}'.format(HOST_IP, SERVER_PORT, key))
-  except Exception as e:
-    return f"Error: {e}"
-
-  return response.json().get(key)
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
