@@ -16,7 +16,7 @@ The back end of the timer is written in `api.py`. To start the server:
 python api.py
 ```
 
-The server will start with Waitress if installed, or the Flask development server otherwise. The host to bind to can be specified with the `--host` flag, and the port with the `--port` flag. The defaults are `0.0.0.0` and `5000`. The value of `0.0.0.0` for the host IP allows any device on the network to communicate with the server.
+The server will start with Waitress if installed, or the Flask development server otherwise. A simple web utility is provided at the root of the server for controling the configuration of the timer. The host to bind to can be specified with the `--host` flag, and the port with the `--port` flag. The defaults are `0.0.0.0` and `5000`. The value of `0.0.0.0` for the host IP allows any device on the network to communicate with the server.
 
 The following API routes are supported:
 
@@ -28,6 +28,19 @@ The following API routes are supported:
 |reset|GET|Resets the start timestamp of the timer|
 |game_times|GET| Get the current time state of the timer|
 |shutdown|POST| Shuts down the server at the specified timestamp |
+
+The route `/game_times` returns everything needed by a front-end application to display the status of the timer. It uses the following data structure:
+| Key | Data type | Description |
+|-----|-----------|-------------|
+|hours| int | Number of hours to display on the timer |
+|minutes| int | Number of minutes to display on the timer |
+|seconds| int | Number of seconds to display on the timer |
+|end_number| int | Ideal end number if keeping to the specified pace |
+|end_percentage| float | Percentage complete (out of 1) of the current end |
+|overtime| bool | True if the game is past the time alotted for that game and over time is allowed |
+|time_per_end| int | Current setting of time per end in seconds |
+|total_time| int | Duration of the game in seconds |
+|uptime| int | How long the timer has been running in seconds |
 
 
 ## Front end
