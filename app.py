@@ -139,8 +139,8 @@ class IceClock:
       text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))
 
       # Blink the timer on for one second and off for one second when over time
-      if not self._overtime or self._seconds % 2:
-        self.screen.blit(text, text_rect)
+      #if not self._overtime or self._seconds % 2:
+      self.screen.blit(text, text_rect)
     else:
       text = self.timer_font.render("LAST END", True, color)
       text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))
@@ -168,7 +168,10 @@ class IceClock:
     else:
       text = self.end_font.render("OT", True, color)
       text_rect = text.get_rect(center=(self.center["x"], self.center["y"] - 3*self.height // 16))
-      self.screen.blit(text, text_rect)
+      
+      # Blink the "OT" text on for one second and off for one second when over time
+      if not self._overtime or self._seconds % 2:
+        self.screen.blit(text, text_rect)
 
   def render_end_progress_bar(self):
     for rect in self.bar_rects:
