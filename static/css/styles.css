@@ -140,7 +140,7 @@ fieldset {
   padding: 2px 10px;
 }
 
-fieldset > input {
+input[type="radio"] {
   margin-right: 10px;
 }
 
