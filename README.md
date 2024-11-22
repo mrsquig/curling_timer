@@ -2,7 +2,7 @@
 PyGame app for timing curling games
 
 ## Overview
-The timer application uses a Flask RESTful API on the backend to setup the configuration of the timer settings and retrieve the current values of the timer. A PyGame front end display is provided. This project relies on the following third-party Python packages:
+The timer application uses a Flask RESTful API on the backend to set up the configuration of the timer settings and retrieve the current values of the timer. A PyGame front-end display is provided. This project relies on the following third-party Python packages:
 
 - Flask
 - Requests
@@ -16,7 +16,7 @@ The back end of the timer is written in `api.py`. To start the server:
 python api.py
 ```
 
-The server will start with Waitress if installed, or the Flask development server otherwise. A simple web utility is provided at the root of the server for controling the configuration of the timer. The host to bind to can be specified with the `--host` flag, and the port with the `--port` flag. The defaults are `0.0.0.0` and `5000`. The value of `0.0.0.0` for the host IP allows any device on the network to communicate with the server.
+The server will start with Waitress if installed, or the Flask development server otherwise. A simple web utility is provided at the root of the server for controlling the configuration of the timer. The host to bind to can be specified with the `--host` flag, and the port with the `--port` flag. The defaults are `0.0.0.0` and `5000`. The value of `0.0.0.0` for the host IP allows any device on the network to communicate with the server.
 
 The following API routes are supported:
 
@@ -37,14 +37,14 @@ The route `/game_times` returns everything needed by a front-end application to 
 |seconds| int | Number of seconds to display on the timer |
 |end_number| int | Ideal end number if keeping to the specified pace |
 |end_percentage| float | Percentage complete (out of 1) of the current end |
-|overtime| bool | True if the game is past the time alotted for that game and over time is allowed |
+|overtime| bool | True if the game is past the time allotted for that game and overtime is allowed |
 |time_per_end| int | Current setting of time per end in seconds |
 |total_time| int | Duration of the game in seconds |
 |uptime| int | How long the timer has been running in seconds |
 
 
 ## Front end
-An example PyGame front end is provided in `app.py` Simply run to start the front-end.
+An example PyGame front end is provided in `app.py` Simply run to start the front end.
 
 ```
 python app.py
@@ -52,7 +52,7 @@ python app.py
 
 The host IP of the backend server can be specified with the `--host` flag, and the port with the `--port` flag. The defaults are `127.0.0.1` and `5000`.
 
-If the server is not running, it will be started at run-time. The front-end has the following key bindings:
+If the server is not running, it will be started at run-time. The front end has the following key bindings:
 |Key|Action|
 |---|------|
 |r| Reset timer|

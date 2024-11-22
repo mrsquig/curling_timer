@@ -10,12 +10,17 @@
 <body>
     <h1>Curling timer configuration</h1>
     <div class="card">
-        <form method="POST">
+        <form name="timerOptions" onsubmit="submitPreprocessing();" method="POST">
             <label for="num_ends">Number of ends:</label><br>
             <input type="text" id="num_ends" name="num_ends" value="{{num_ends}}" required><br>
             
-            <label for="time_per_end">Time per end (sec):</label><br>
+            <label for="time_per_end">Time per end:</label><br>
             <input type="text" id="time_per_end" name="time_per_end" value="{{time_per_end}}" required>
+            
+            <label for="time_per_end_seconds">Seconds</label>
+            <input type="radio" id="time_per_end_seconds" name="time_per_end_unit" value="sec" checked/>
+            <label for="time_per_end_minutes">Minutes</label>
+            <input type="radio" id="time_per_end_minutes" name="time_per_end_unit" value="min"/>
 
             <fieldset>
                 <legend>Allow overtime:</legend>                
@@ -50,5 +55,31 @@
         </div>
     </div>
 
+    <script>
+        var time_units = document.timerOptions.time_per_end_unit;
+        for (var i = 0; i < time_units.length; i++) {
+            time_units[i].addEventListener('change', function() {
+                var timePerEnd_Input = document.getElementById("time_per_end");
+                var timePerEnd = timePerEnd_Input.value;
+                if (this.value === "sec"){
+                    timePerEnd_Input.value = timePerEnd * 60;
+                } else {
+                    timePerEnd_Input.value = timePerEnd / 60;
+                }
+            });
+        }
+
+        function submitPreprocessing() {
+            var timePerEnd_Input = document.getElementById("time_per_end");
+            var timePerEnd = timePerEnd_Input.value;
+
+            var timePerEnd_Seconds = document.getElementById("time_per_end_seconds");
+
+            //convert back to seconds before form is submitted if currently showing minutes
+            if (!timePerEnd_Seconds.checked){
+                timePerEnd_Input.value = timePerEnd * 60;
+            }
+        }
+    </script>
 </body>
 </html>
