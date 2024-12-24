@@ -20,17 +20,27 @@ app_config = {
     "time_per_end": ConfigValue(15*60, int),
     "num_ends": ConfigValue(8, int),
     "start_timestamp": ConfigValue(timestamp(), int),
+    "stop_timestamp": ConfigValue(timestamp(), int),
+    "timer_stop_uptime": ConfigValue(0, int),
     "count_direction": ConfigValue(-1, int),
     "allow_overtime": ConfigValue(False, bool_type),
+    "is_timer_running": ConfigValue(False, bool_type)
 }
 
 @app.route('/', methods=['GET','POST'])
 def index(): 
   if request.method == 'POST':
-    app_config["num_ends"].value = request.form.get('num_ends')
-    app_config["time_per_end"].value = request.form.get('time_per_end')
-    app_config["count_direction"].value = request.form.get('count_direction')
-    app_config["allow_overtime"].value = request.form.get("allow_overtime")
+    if "Start" in request.form:
+      start_timer()
+    elif "Stop" in request.form:
+      stop_timer()
+    elif "Reset" in request.form:
+      reset_timer()
+    else:
+      app_config["num_ends"].value = request.form.get('num_ends')
+      app_config["time_per_end"].value = request.form.get('time_per_end')
+      app_config["count_direction"].value = request.form.get('count_direction')
+      app_config["allow_overtime"].value = request.form.get("allow_overtime")
 
   data = {key: value.value for key,value in app_config.items()}
   times, status = get_times()
@@ -65,22 +75,55 @@ def update_config():
     return jsonify({key: app_config[key].value}), 200
   return jsonify({"error": "No value provided"}), 400
 
+@app.route('/start', methods=['GET'])
+def start_timer():
+  global app_config
+  app_config["is_timer_running"].value = True
+
+  #if the timer was already paused, need to account for the amount of time the timer
+  #had already elapsed. Otherwise this would essentially reset the timer.
+  app_config["start_timestamp"].value = timestamp() - app_config["timer_stop_uptime"].value
+
+  return jsonify({"start_timestamp": app_config["start_timestamp"].value}), 200
+
+@app.route('/stop', methods=['GET'])
+def stop_timer():
+  global app_config
+  app_config["is_timer_running"].value = False
+  app_config["stop_timestamp"].value = timestamp()
+
+  #update the uptime each time we stop, so we know how much time had already elapsed at the time of stoppage
+  app_config["timer_stop_uptime"].value = app_config["stop_timestamp"].value - app_config["start_timestamp"].value
+
+  return jsonify({"stop_timestamp": app_config["stop_timestamp"].value}), 200
+
 @app.route('/reset', methods=['GET'])
 def reset_timer():
   global app_config
   time = request.args.get('time')
   if not time:
     app_config["start_timestamp"].value = timestamp()
+    app_config["stop_timestamp"].value = timestamp()
   else:
     app_config["start_timestamp"].value = time
+    app_config["stop_timestamp"].value = time
+
+  app_config["timer_stop_uptime"].value = 0
+
+  #always stop timer when reseting time
+  app_config["is_timer_running"].value = False
 
   return jsonify({"start_timestamp": app_config["start_timestamp"].value}), 200
 
 @app.route('/game_times', methods=['GET'])
 def get_times():
   # Get how long the timer has been running
-  current_time = timestamp()
-  uptime = int(current_time) - app_config["start_timestamp"].value
+  if app_config["is_timer_running"].value == True:
+    current_time = timestamp()
+    uptime = int(current_time) - app_config["start_timestamp"].value
+  else:
+    current_time = app_config["stop_timestamp"].value
+    uptime = int(current_time) - app_config["start_timestamp"].value
 
   # Initialize results dictionary
   times = {}
@@ -100,10 +143,16 @@ def get_times():
   game_time = times["total_time"] - uptime if app_config["count_direction"].value < 0 else uptime
   
   # Determine if we're over time or not. If allow_overtime is false, then the over time flag will always be false
-  times["overtime"] = uptime > times["total_time"] and app_config["allow_overtime"].value
+  times["is_overtime"] = uptime > times["total_time"] and app_config["allow_overtime"].value
   
+  # If we don't allow overtime and the timer is done, directly call the stop function so timing stops
+  # and set the time to 0 or total time, so it stays that way
+  if uptime >= times["total_time"] and not app_config["allow_overtime"].value:
+    stop_timer()
+    game_time = 0 if app_config["count_direction"].value < 0 else times["total_time"]
+
   # If we're over time, then return how far over time we are
-  if times["overtime"] and app_config["count_direction"].value < 0:
+  if times["is_overtime"] and app_config["count_direction"].value < 0:
     game_time = game_time*-1
 
   # Divide the time into hours, minutes, seconds
