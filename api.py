@@ -20,17 +20,27 @@ app_config = {
     "time_per_end": ConfigValue(15*60, int),
     "num_ends": ConfigValue(8, int),
     "start_timestamp": ConfigValue(timestamp(), int),
+    "stop_timestamp": ConfigValue(timestamp(), int),
     "count_direction": ConfigValue(-1, int),
     "allow_overtime": ConfigValue(False, bool_type),
+    "is_timer_running": ConfigValue(False, bool_type)
 }
 
 @app.route('/', methods=['GET','POST'])
 def index(): 
   if request.method == 'POST':
-    app_config["num_ends"].value = request.form.get('num_ends')
-    app_config["time_per_end"].value = request.form.get('time_per_end')
-    app_config["count_direction"].value = request.form.get('count_direction')
-    app_config["allow_overtime"].value = request.form.get("allow_overtime")
+    if "Start" in request.form:
+      start_timer()
+    elif "Stop" in request.form:
+      stop_timer()
+    elif "Reset" in request.form:
+      reset_timer()
+    else:
+      print("Save Options")
+      app_config["num_ends"].value = request.form.get('num_ends')
+      app_config["time_per_end"].value = request.form.get('time_per_end')
+      app_config["count_direction"].value = request.form.get('count_direction')
+      app_config["allow_overtime"].value = request.form.get("allow_overtime")
 
   data = {key: value.value for key,value in app_config.items()}
   times, status = get_times()
@@ -65,22 +75,47 @@ def update_config():
     return jsonify({key: app_config[key].value}), 200
   return jsonify({"error": "No value provided"}), 400
 
+@app.route('/start', methods=['GET'])
+def start_timer():
+  global app_config
+  app_config["is_timer_running"].value = True
+  app_config["start_timestamp"].value = timestamp()
+
+  return jsonify({"start_timestamp": app_config["start_timestamp"].value}), 200
+
+@app.route('/stop', methods=['GET'])
+def stop_timer():
+  global app_config
+  app_config["is_timer_running"].value = False
+  app_config["stop_timestamp"].value = timestamp()
+
+  return jsonify({"stop_timestamp": app_config["stop_timestamp"].value}), 200
+
 @app.route('/reset', methods=['GET'])
 def reset_timer():
   global app_config
   time = request.args.get('time')
   if not time:
     app_config["start_timestamp"].value = timestamp()
+    app_config["stop_timestamp"].value = timestamp()
   else:
     app_config["start_timestamp"].value = time
+    app_config["stop_timestamp"].value = time
+
+  #always stop timer when reseting time
+  app_config["is_timer_running"].value = False
 
   return jsonify({"start_timestamp": app_config["start_timestamp"].value}), 200
 
 @app.route('/game_times', methods=['GET'])
 def get_times():
   # Get how long the timer has been running
-  current_time = timestamp()
-  uptime = int(current_time) - app_config["start_timestamp"].value
+  if app_config["is_timer_running"].value == True:
+    current_time = timestamp()
+    uptime = int(current_time) - app_config["start_timestamp"].value
+  else:
+    current_time = app_config["stop_timestamp"].value
+    uptime = int(current_time) - app_config["start_timestamp"].value
 
   # Initialize results dictionary
   times = {}
