@@ -116,7 +116,7 @@ class IceClock:
     self._seconds = response.json().get("seconds")
     self._end_number = response.json().get("end_number")
     self._end_percentage = response.json().get("end_percentage")
-    self._overtime = response.json().get("overtime")
+    self._is_overtime = response.json().get("is_overtime")
     self._num_ends = response.json().get("num_ends")
     self._time_per_end = response.json().get("time_per_end")
     self._uptime = response.json().get("uptime")
@@ -139,21 +139,18 @@ class IceClock:
   def render_timer(self):
     color = self.get_text_color()
 
-    # Always display the timer during the game unless it is the last end or if over time is allowed
     text = self.timer_font.render("{:02d}:{:02d}:{:02d}".format(self._hours, self._minutes, self._seconds), True, color)
     text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))
 
-    # Blink the timer on for one second and off for one second when over time
-    #if not self._overtime or self._seconds % 2:
     self.screen.blit(text, text_rect)
 
   def render_detail_text(self):
     color = self.get_text_color()
 
     is_last_end = self._end_number >= self._num_ends
-    if is_last_end and not self._overtime:
+    if is_last_end and not self._is_overtime:
       text = self.last_end_font.render("LAST END", True, color)
-    elif self._overtime:
+    elif self._is_overtime:
       text = self.last_end_font.render("OVERTIME", True, color)
     else:
       text = self.last_end_font.render("", True, color)
@@ -164,7 +161,7 @@ class IceClock:
   def render_end_number(self):
     color = self.get_text_color()
 
-    if not self._overtime:
+    if not self._is_overtime:
       end_num = self._end_number if self._end_number < self._num_ends else self._num_ends
       text = self.end_font.render("{:d}".format(end_num), True, color)
       text_rect = text.get_rect(center=(self.center["x"] - 2*self.width // 32, self.center["y"] - 3*self.height // 16))
@@ -178,7 +175,7 @@ class IceClock:
       text_rect = text.get_rect(center=(self.center["x"], self.center["y"] - 3*self.height // 16))
       
       # Blink the "OT" text on for one second and off for one second when over time
-      if not self._overtime or self._seconds % 2:
+      if not self._is_overtime or self._seconds % 2:
         self.screen.blit(text, text_rect)
 
   def render_end_progress_bar(self):
@@ -190,7 +187,7 @@ class IceClock:
     # Round to an integer multiple of the number of stones per end
     percentage = int(NUM_STONES_PER_END*self._end_percentage)/NUM_STONES_PER_END
     filled_height = int(self.bar_height * (1 - percentage))
-    if self._overtime:
+    if self._is_overtime:
       # Timer is expired and over time is allowed
       filled_height = int(self.bar_height)
     elif self._end_number > self._num_ends:
@@ -200,7 +197,7 @@ class IceClock:
     for rect in self.bar_rects:
       filled_rect = pygame.Rect(rect.x, rect.y + self.bar_height - filled_height,
                                 self.bar_width, filled_height)
-      color = Color.BAR_FG.value if not self._overtime else Color.OT.value
+      color = Color.BAR_FG.value if not self._is_overtime else Color.OT.value
       pygame.draw.rect(self.screen, color, filled_rect, border_radius = self.height//50)
 
       # Add dividers to progress bars for each stone
@@ -236,7 +233,7 @@ class IceClock:
     
     self.screen.fill(Color.SCREEN_BG.value)
     self.render_end_progress_bar()
-    self.render_end_progress_labels()
+    #self.render_end_progress_labels()
     self.render_timer()
     self.render_detail_text()
     self.render_end_number()
