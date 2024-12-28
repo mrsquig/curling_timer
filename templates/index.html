@@ -10,7 +10,18 @@
 <body>
     <h1>Curling timer configuration</h1>
     <div class="card">
+        <form name="timerActions" method="POST">
+            <h3>Timer Controls</h3>
+            <br />
+            <button type="submit" name="Start" style="background-color: green;">Start Timer</button>
+            <button type="submit" name="Stop" style="background-color: red;">Stop Timer</button>
+            <button type="submit" name="Reset" style="background-color: blue;">Reset Timer</button>
+        </form>
+    </div>
+    <div class="card">
         <form name="timerOptions" onsubmit="submitPreprocessing();" method="POST">
+            <h3>Timer Options</h3>
+            <br />
             <label for="num_ends">Number of ends:</label><br>
             <input type="text" id="num_ends" name="num_ends" value="{{num_ends}}" required><br>
             
@@ -37,8 +48,8 @@
                 <label for="countup">Count up</label>
                 <input type="radio" id="countup" name="count_direction" value="1"  {% if count_direction == 1 %} checked {% endif %}/>
             </fieldset>
-            
-            <button type="submit">Submit</button>
+            <br />
+            <button type="submit" name="Save">Save Options</button>
         </form>
     </div>
 
