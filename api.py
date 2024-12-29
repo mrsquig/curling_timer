@@ -68,6 +68,9 @@ def update_config():
   key = request.args.get('key')
   if not key:
     return jsonify({"error": "No key provided"}), 400
+
+  if key not in app_config:
+    return jsonify({"error": "Key not found"}), 500
     
   new_value = request.args.get("value")
   if new_value:
