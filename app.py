@@ -69,10 +69,11 @@ class IceClock:
     # Set up the fonts
     #courier = pygame.font.match_font("couriernew", bold=True)
     jetbrains = os.path.join("ttf", "JetBrainsMono-Medium.ttf")
-    self.timer_font = pygame.font.Font(jetbrains, 3*self.height // 16)
-    self.last_end_font = pygame.font.Font(jetbrains, 2*self.height // 16)
-    self.end_font = pygame.font.Font(jetbrains,  self.height // 2)
-    self.end_progress_label_font = pygame.font.Font(jetbrains, self.height // 32)
+    self.fonts = {}
+    self.fonts["timer"] = pygame.font.Font(jetbrains, 3*self.height // 16)
+    self.fonts["last_end"] = pygame.font.Font(jetbrains, 2*self.height // 16)
+    self.fonts["end"] = pygame.font.Font(jetbrains,  self.height // 2)
+    self.fonts["end_progress_label"] = pygame.font.Font(jetbrains, self.height // 32)
 
     # Set up progress bar(s)
     self.bar_width = self.width // 8
@@ -139,7 +140,7 @@ class IceClock:
   def render_timer(self):
     color = self.get_text_color()
 
-    text = self.timer_font.render("{:02d}:{:02d}:{:02d}".format(self._hours, self._minutes, self._seconds), True, color)
+    text = self.fonts["timer"].render("{:02d}:{:02d}:{:02d}".format(self._hours, self._minutes, self._seconds), True, color)
     text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))
 
     self.screen.blit(text, text_rect)
@@ -149,11 +150,11 @@ class IceClock:
 
     is_last_end = self._end_number >= self._num_ends
     if is_last_end and not self._is_overtime:
-      text = self.last_end_font.render("LAST END", True, color)
+      text = self.fonts["last_end"].render("LAST END", True, color)
     elif self._is_overtime:
-      text = self.last_end_font.render("OVERTIME", True, color)
+      text = self.fonts["last_end"].render("OVERTIME", True, color)
     else:
-      text = self.last_end_font.render("", True, color)
+      text = self.fonts["last_end"].render("", True, color)
   
     text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 6.5*self.height // 16))
     self.screen.blit(text, text_rect)
@@ -163,15 +164,15 @@ class IceClock:
 
     if not self._is_overtime:
       end_num = self._end_number if self._end_number < self._num_ends else self._num_ends
-      text = self.end_font.render("{:d}".format(end_num), True, color)
+      text = self.fonts["end"].render("{:d}".format(end_num), True, color)
       text_rect = text.get_rect(center=(self.center["x"] - 2*self.width // 32, self.center["y"] - 3*self.height // 16))
       self.screen.blit(text, text_rect)
       
-      text = self.timer_font.render("/{:d}".format(self._num_ends), True, color)
+      text = self.fonts["timer"].render("/{:d}".format(self._num_ends), True, color)
       text_rect = text.get_rect(center=(self.center["x"] + 3*self.width // 32, self.center["y"] - 3*self.height // 16))
       self.screen.blit(text, text_rect)
     else:
-      text = self.end_font.render("OT", True, color)
+      text = self.fonts["end"].render("OT", True, color)
       text_rect = text.get_rect(center=(self.center["x"], self.center["y"] - 3*self.height // 16))
       
       # Blink the "OT" text on for one second and off for one second when over time
@@ -213,8 +214,8 @@ class IceClock:
   def render_end_progress_label(self, side):
     color = self.get_text_color()
 
-    text = self.end_progress_label_font.render("STONES", True, color)
-    text2 = self.end_progress_label_font.render("REMAINING", True, color)
+    text = self.fonts["end_progress_label"].render("STONES", True, color)
+    text2 = self.fonts["end_progress_label"].render("REMAINING", True, color)
 
     x_offset = (self.center["x"] - self.bar_x_offset) if side == "left" else (self.center["x"] + self.bar_x_offset)
     y_offset_upper = self.center["y"] + 7.3*self.height // 16
