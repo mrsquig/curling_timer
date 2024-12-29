@@ -208,24 +208,20 @@ class IceClock:
         pygame.draw.rect(self.screen, Color.SCREEN_BG.value, stone_div)
 
   def render_end_progress_labels(self):
-    self.render_end_progress_label("left")
-    self.render_end_progress_label("right")
-
-  def render_end_progress_label(self, side):
     color = self.get_text_color()
+    text = (self.fonts["end_progress_label"].render("STONES", True, color),
+            self.fonts["end_progress_label"].render("REMAINING", True, color))
 
-    text = self.fonts["end_progress_label"].render("STONES", True, color)
-    text2 = self.fonts["end_progress_label"].render("REMAINING", True, color)
+    side_signs = (-1, 1)
+    y_offsets = (self.center["y"] + 7.3*self.height // 16,
+                 self.center["y"] + 7.7*self.height // 16)
 
-    x_offset = (self.center["x"] - self.bar_x_offset) if side == "left" else (self.center["x"] + self.bar_x_offset)
-    y_offset_upper = self.center["y"] + 7.3*self.height // 16
-    y_offset_lower = self.center["y"] + 7.7*self.height // 16
+    for sgn in side_signs:
+      x_offset = (self.center["x"] + sgn*self.bar_x_offset)
 
-    text_rect = text.get_rect(center=(x_offset, y_offset_upper))
-    text_rect2 = text2.get_rect(center=(x_offset, y_offset_lower))
-
-    self.screen.blit(text, text_rect)
-    self.screen.blit(text2, text_rect2)
+      for txt, y_offset in zip(text, y_offsets):      
+        text_rect = txt.get_rect(center=(x_offset, y_offset))
+        self.screen.blit(txt, text_rect)
 
   def render(self):
     '''
