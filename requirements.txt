@@ -1,0 +1,4 @@
+flask
+pygame
+requests
+waitress
