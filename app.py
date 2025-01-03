@@ -54,6 +54,7 @@ class IceClock:
       self.screen = pygame.display.set_mode((self.width, self.height))
     else:
       self.screen = pygame.display.set_mode((self.width, self.height), pygame.FULLSCREEN)
+    pygame.mouse.set_visible(not fullscreen)
     pygame.display.set_caption("Ice Clock")
 
     # Initialize UI elements
@@ -265,6 +266,7 @@ class IceClock:
     elif event.key == pygame.K_f:
       # F key -- toggle fullscreen
       logger.debug("User requested fullscreen")
+      pygame.mouse.set_visible(self.fullscreen)
       self.fullscreen = not self.fullscreen      
       if self.fullscreen:
         self.width = self.fs_width
