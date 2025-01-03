@@ -34,7 +34,7 @@ class Color(Enum):
   OT = (160, 80, 40)
 
 class IceClock:
-  def __init__(self, width=1280, height=720):
+  def __init__(self, width=1280, height=720, fullscreen=False):
     # Initialize Pygame
     pygame.init()
 
@@ -48,9 +48,12 @@ class IceClock:
     self.window_height = height    
 
     # Set up the display -- start in window mode
-    self.width = width
-    self.height = height
-    self.screen = pygame.display.set_mode((self.width, self.height))
+    self.width = width if not fullscreen else self.fs_width
+    self.height = height if not fullscreen else self.fs_height
+    if not fullscreen:
+      self.screen = pygame.display.set_mode((self.width, self.height))
+    else:
+      self.screen = pygame.display.set_mode((self.width, self.height), pygame.FULLSCREEN)
     pygame.display.set_caption("Ice Clock")
 
     # Initialize UI elements
@@ -59,7 +62,7 @@ class IceClock:
     # Set the start time as the current time
     self.start_time = datetime.datetime.now()
     self.running = True
-    self.fullscreen = False
+    self.fullscreen = fullscreen
 
   def init_UI(self):
     '''
@@ -307,6 +310,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument("--host", default="127.0.0.1", help="host IP of backend server")
   parser.add_argument("--port", default="5000", help="port that backend server is listening on")
+  parser.add_argument("--full-screen", "-f", action="store_true", default=False, help="launch in full screen mode")
   args = parser.parse_args()
 
   HOST_IP = args.host
@@ -323,5 +327,5 @@ if __name__ == "__main__":
       sys.exit(1)
 
   # Start the front end
-  clock = IceClock()
+  clock = IceClock(fullscreen=args.full_screen)
   clock.run()

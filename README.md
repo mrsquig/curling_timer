@@ -52,7 +52,7 @@ python app.py
 
 The host IP of the backend server can be specified with the `--host` flag, and the port with the `--port` flag. The defaults are `127.0.0.1` and `5000`.
 
-If the server is not running, it will be started at run-time. The front end has the following key bindings:
+Full-screen mode can be entered at run-time using the `--full-screen` flag (alternatively `-f`). If the server is not running, it will be started at run-time. The front end has the following key bindings:
 |Key|Action|
 |---|------|
 |r| Reset timer|
