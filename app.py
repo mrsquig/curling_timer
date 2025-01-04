@@ -31,7 +31,7 @@ def color_factory(colors=None):
     colors = {}
 
   for key in colors:
-    if not isinstance(colors[key], collections.Sequence) or len(colors[key]) != 3:
+    if not isinstance(colors[key], tuple) or len(colors[key]) != 3:
       logger.warning("Color values must be a 3-tuple of RGB values")
       logger.warning("Using default color values for {:s}".format(key))
       colors.pop(key)
