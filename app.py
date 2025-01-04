@@ -30,24 +30,29 @@ def color_factory(colors=None):
   if colors is None:
     colors = {}
 
+  remove_keys = []
+
   for key in colors:
     if not isinstance(colors[key], tuple) or len(colors[key]) != 3:
       logger.warning("Color values must be a 3-tuple of RGB values")
       logger.warning("Using default color values for {:s}".format(key))
-      colors.pop(key)
+      remove_keys.append(key)
       continue
 
     if not all(isinstance(v, int) for v in colors[key]):
       logger.warning("Color values must be integers")
       logger.warning("Using default color values for {:s}".format(key))
-      colors.pop(key)
+      remove_keys.append(key)
       continue
 
     if not all(0 <= v <= 255 for v in colors[key]):
       logger.warning("Color values must be between 0 and 255")
       logger.warning("Using default color values for {:s}".format(key))
-      colors.pop(key)
+      remove_keys.append(key)
       continue
+
+  for key in remove_keys:
+    colors.pop(key)
 
   class Color(Enum):
     SCREEN_BG = colors["SCREEN_BG"] if "SCREEN_BG" in colors else (0, 0, 0)
