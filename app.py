@@ -11,6 +11,7 @@ import argparse
 import pygame
 import time
 import logging
+import json
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('curling_timer')
 logger.setLevel(logging.INFO)
@@ -20,23 +21,53 @@ SERVER_PORT = None
 SERVER_PROCESS = None
 CONFIG_UPDATE_TIME_LIMIT = 30
 NUM_STONES_PER_END = 8
+Color = None
 
 def timestamp():
   return datetime.datetime.now().timestamp()
 
-class Color(Enum):
-  SCREEN_BG = (0, 0, 0)
-  TEXT = (255, 255, 255)  
-  TEXT_END_MINUS1 = (255, 204, 42)
-  TEXT_LASTEND = (160, 80, 40)
-  BAR_FG = (40, 80, 160)
-  BAR_BG = (50, 50, 50)
-  OT = (160, 80, 40)
+def color_factory(colors=None):
+  if colors is None:
+    colors = {}
+
+  for key in colors:
+    if not isinstance(colors[key], collections.Sequence) or len(colors[key]) != 3:
+      logger.warning("Color values must be a 3-tuple of RGB values")
+      logger.warning("Using default color values for {:s}".format(key))
+      colors.pop(key)
+      continue
+
+    if not all(isinstance(v, int) for v in colors[key]):
+      logger.warning("Color values must be integers")
+      logger.warning("Using default color values for {:s}".format(key))
+      colors.pop(key)
+      continue
+
+    if not all(0 <= v <= 255 for v in colors[key]):
+      logger.warning("Color values must be between 0 and 255")
+      logger.warning("Using default color values for {:s}".format(key))
+      colors.pop(key)
+      continue
+
+  class Color(Enum):
+    SCREEN_BG = colors["SCREEN_BG"] if "SCREEN_BG" in colors else (0, 0, 0)
+    TEXT = colors["TEXT"] if "TEXT" in colors else (255, 255, 255)  
+    TEXT_END_MINUS1 = colors["TEXT_END_MINUS1"] if "TEXT_END_MINUS1" in colors else (255, 204, 42)
+    TEXT_LASTEND = colors["TEXT_LASTEND"] if "TEXT_LASTEND" in colors else (160, 80, 40)
+    BAR_FG = colors["BAR_FG"] if "BAR_FG" in colors else (40, 80, 160)
+    BAR_BG = colors["BAR_BG"] if "BAR_BG" in colors else (50, 50, 50)
+    OT = colors["OT"] if "OT" in colors else (160, 80, 40)
+  return Color
 
 class IceClock:
-  def __init__(self, width=1280, height=720, fullscreen=False):
+  def __init__(self, width=1280, height=720, fullscreen=False, styles=None):
     # Initialize Pygame
     pygame.init()
+
+    # Setup the styles
+    self.styles_path = styles
+    self.last_read_styles = None
+    self.update_styles()
 
     # Setup the dimensions for window mode and full-screen mode
     # We need to do this before setting up the window so that we 
@@ -45,7 +76,7 @@ class IceClock:
     self.fs_width = info.current_w
     self.fs_height = info.current_h    
     self.window_width = width
-    self.window_height = height    
+    self.window_height = height
 
     # Set up the display -- start in window mode
     self.width = width if not fullscreen else self.fs_width
@@ -87,6 +118,23 @@ class IceClock:
              (self.width - self.bar_width) // 2 + self.bar_x_offset)
     self.bar_rects = [pygame.Rect(x, (self.height - self.bar_height)//2, 
                                 self.bar_width, self.bar_height) for x in bar_x]
+
+  def update_styles(self):
+    global Color
+    # Use default styles if no styles file is provided
+    if self.styles_path is None:
+      Color = color_factory({})
+      return
+
+    # Check if the styles file has been updated since last read
+    if os.path.getmtime(self.styles_path) == self.last_read_styles:
+      return
+
+    # Read the styles from the file
+    with open(self.styles_path, "r") as f:
+      styles = {k: tuple(v) for k,v in json.load(f).items()}
+    self.last_read_styles = os.path.getmtime(self.styles_path)
+    Color = color_factory(styles)
 
   @property
   def center(self):
@@ -231,7 +279,8 @@ class IceClock:
     '''
     Render all UI elements to the PyGame window
     '''
-    
+
+    self.update_styles()    
     self.screen.fill(Color.SCREEN_BG.value)
     self.render_end_progress_bar()
     #self.render_end_progress_labels()
@@ -313,6 +362,7 @@ if __name__ == "__main__":
   parser.add_argument("--host", default="127.0.0.1", help="host IP of backend server")
   parser.add_argument("--port", default="5000", help="port that backend server is listening on")
   parser.add_argument("--full-screen", "-f", action="store_true", default=False, help="launch in full screen mode")
+  parser.add_argument("--styles", "-s", default=None, help="path to JSON file with color styles")
   args = parser.parse_args()
 
   HOST_IP = args.host
@@ -329,5 +379,5 @@ if __name__ == "__main__":
       sys.exit(1)
 
   # Start the front end
-  clock = IceClock(fullscreen=args.full_screen)
+  clock = IceClock(fullscreen=args.full_screen, styles=args.styles)
   clock.run()

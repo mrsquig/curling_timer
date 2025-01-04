@@ -58,3 +58,30 @@ Full-screen mode can be entered at run-time using the `--full-screen` flag (alte
 |r| Reset timer|
 |q| Quit front end|
 |f| Toggle full screen|
+
+### Customizing the styles of the front end
+
+The colors of the front end elements can be customized by an optional style sheet file in JSON format. The style sheet is provided using the `--styles` or `-s` flag. The format of the file is an un-ordered list of key/value pairs. The value of each element is a three-element list of red, green, and blue values which define the color.
+
+An example is as follows,
+
+```
+{
+    "SCREEN_BG": [127, 127, 127],
+    "BAR_FG": [127, 0, 200]
+}
+```
+
+The colors should be defined using integer values of red, green, and blue. The integers must be between 0 and 255. The file can be changed while the timer is running to change the styles on-the-fly.
+
+The following keys can be defined:
+
+| Key | Description | Default value |
+|-----|-------------|---------------|
+|SCREEN_BG | Background color of the timer | (0, 0, 0) |
+|BAR_FG | Progress bar foreground color | (40, 80, 160) |
+|BAR_BG | Progress bar background color| (50, 50, 50) |
+|TEXT | Main text color | (255, 255, 255)   |
+|TEXT_END_MINUS1 | Text color used for the second to last end | (255, 204, 42) |
+|TEXT_LASTEND | Text color used for the last end | (160, 80, 40) |
+|OT | Overtime text color and progress bar foreground color | (160, 80, 40) |
