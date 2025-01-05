@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template, send_file
+from flask import Flask, jsonify, request, render_template
 from datetime import datetime
 from config import ConfigValue, bool_type
 import json

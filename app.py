@@ -95,7 +95,7 @@ class IceClock:
     self.window_width = width
     self.window_height = height
 
-    if not headless:    
+    if not headless:
       # Set up the display -- start in window mode
       self.width = width if not fullscreen else self.fs_width
       self.height = height if not fullscreen else self.fs_height
@@ -105,7 +105,7 @@ class IceClock:
         self.screen = pygame.display.set_mode((self.width, self.height), pygame.FULLSCREEN)
       pygame.mouse.set_visible(not fullscreen)
       pygame.display.set_caption("Ice Clock")
-    else:      
+    else:
       self.width = self.fs_width
       self.height = self.fs_height
       self.screen = pygame.Surface((self.width, self.height))
@@ -445,5 +445,5 @@ if __name__ == "__main__":
       sys.exit(1)
 
   # Start the front end
-  clock = IceClock(fullscreen=args.full_screen, styles_path=args.styles, jestermode=args.jester)
+  clock = IceClock(fullscreen=args.full_screen, styles=args.styles)
   clock.run()
