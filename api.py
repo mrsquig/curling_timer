@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, send_file
 from datetime import datetime
 from config import ConfigValue, bool_type
 import json
@@ -6,6 +6,7 @@ import argparse
 import time
 import sys
 import os
+import io
 
 try:
   USING_WAITRESS = True
@@ -58,6 +59,46 @@ def index():
   times = response.json.get("times")
   data.update(times)
   return render_template('index.html', **data)
+
+@app.route('/style_preview', methods=['GET','POST'])
+def style_preview():
+  from app import color_factory
+  styles = None
+  if request.method == 'POST':
+    style_str = request.form.get('styles')
+    styles = {k: tuple(v) for k,v in json.loads(style_str).items()}
+    styles = {name: color.value for name, color in color_factory(styles).__members__.items()}
+  else:
+    styles = {name: color.value for name, color in color_factory({}).__members__.items()}
+
+  for style in styles:
+    styles[style] = "#{:02x}{:02x}{:02x}".format(*styles[style])
+
+  return render_template('style_preview.html', **styles)
+
+@app.route('/style_img', methods=['POST'])
+def style_img():
+  styles = {k: tuple(v) for k,v in request.get_json().items()}
+  
+  import app
+  img_io = io.BytesIO()
+  clock = app.IceClock(headless=True, styles=styles)
+  clock._server_config = {k: v.value for k,v in app_config.items()}
+  clock.render_to_image(img_io)
+  
+  img_io.seek(0)
+  return send_file(img_io, mimetype='image/png')
+
+@app.route('/download_style', methods=['POST'])
+def download_style():
+  styles = {k: tuple(v) for k,v in request.get_json().items()}
+  output_content = json.dumps(styles, indent=2)
+
+  file_stream = io.BytesIO()
+  file_stream.write(output_content.encode('utf-8'))
+  file_stream.seek(0)
+
+  return send_file(file_stream, as_attachment=True, download_name="user_styles.json", mimetype="text/plain")
 
 @app.route('/version', methods=['GET'])
 def get_version():

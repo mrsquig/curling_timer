@@ -58,9 +58,12 @@
     </div>
    
     <div class="card">
+        <h3>Style configuration</h3>
+        <p>Click <a href="{{url_for('style_preview')}}">here</a> for creating styles for the front end.</p>
+        <br/>
+
         <form name="load_profile" method="POST">
-            <h3>Load profile</h3>
-            <br />
+            <h3>Load server configuration profile</h3>
             <select name="profile_name">
                 <option value="empty"></option>
                 {% for profile in profiles %}

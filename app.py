@@ -12,6 +12,7 @@ import pygame
 import time
 import logging
 import json
+from PIL import Image
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('curling_timer')
 logger.setLevel(logging.INFO)
@@ -59,24 +60,27 @@ def color_factory(colors=None):
     TEXT_END_MINUS1 = colors["TEXT_END_MINUS1"] if "TEXT_END_MINUS1" in colors else (255, 204, 42)
     TEXT_LASTEND = colors["TEXT_LASTEND"] if "TEXT_LASTEND" in colors else (160, 80, 40)
     BAR_FG1 = colors["BAR_FG1"] if "BAR_FG1" in colors else (40, 80, 160)
-    BAR_FG2 = colors["BAR_FG2"] if "BAR_FG2" in colors else (255,255,255)
+    BAR_FG2 = colors["BAR_FG2"] if "BAR_FG2" in colors else (126, 104, 130)
     BAR_BG = colors["BAR_BG"] if "BAR_BG" in colors else (50, 50, 50)
     BAR_DIVIDER = colors["BAR_DIVIDER"] if "BAR_DIVIDER" in colors else (255,255,255)
     OT = colors["OT"] if "OT" in colors else (160, 80, 40)
-    SPENT_STONE = colors["SPENT_STONE"] if "SPENT_STONE" in colors else SCREEN_BG
   return Color
 
 class IceClock:
-  def __init__(self, width=1280, height=720, fullscreen=False, styles=None, jestermode=False):
+  def __init__(self, width=1280, height=720, fullscreen=False, styles_path=None, styles=None, jestermode=False, headless=False):
     # Initialize Pygame
     pygame.init()
 
     # Setup the styles
-    self.styles_path = styles
+    self.styles_path = styles_path
+    self.styles = styles
 
-    if styles is not None:
+    style_args_valid = (styles_path is not None or styles is not None) or (styles_path is None and styles is None)
+    assert style_args_valid, "Either styles_path or styles must be provided, but not both."
+
+    if styles_path is not None:
       styles_folder_path = os.path.join("static", "app_styles")
-      self.styles_path = styles if styles_folder_path in styles.lower() else os.path.join(styles_folder_path, styles)
+      self.styles_path = styles_path if styles_folder_path in styles_path.lower() else os.path.join(styles_folder_path, styles_path)
 
     self.last_read_styles = None
     self.update_styles()
@@ -85,20 +89,26 @@ class IceClock:
     # We need to do this before setting up the window so that we 
     # can get the accurate screen resolution.
     info = pygame.display.Info()
+    self.headless = headless
     self.fs_width = info.current_w
     self.fs_height = info.current_h    
     self.window_width = width
     self.window_height = height
 
-    # Set up the display -- start in window mode
-    self.width = width if not fullscreen else self.fs_width
-    self.height = height if not fullscreen else self.fs_height
-    if not fullscreen:
-      self.screen = pygame.display.set_mode((self.width, self.height))
+    if not headless:
+      # Set up the display -- start in window mode
+      self.width = width if not fullscreen else self.fs_width
+      self.height = height if not fullscreen else self.fs_height
+      if not fullscreen:
+        self.screen = pygame.display.set_mode((self.width, self.height))
+      else:
+        self.screen = pygame.display.set_mode((self.width, self.height), pygame.FULLSCREEN)
+      pygame.mouse.set_visible(not fullscreen)
+      pygame.display.set_caption("Ice Clock")
     else:
-      self.screen = pygame.display.set_mode((self.width, self.height), pygame.FULLSCREEN)
-    pygame.mouse.set_visible(not fullscreen)
-    pygame.display.set_caption("Ice Clock")
+      self.width = self.fs_width
+      self.height = self.fs_height
+      self.screen = pygame.Surface((self.width, self.height))
 
     # Initialize UI elements
     self.init_UI()
@@ -123,17 +133,14 @@ class IceClock:
     self.fonts["end"] = pygame.font.Font(jetbrains,  self.height // 2)
     self.fonts["end_progress_label"] = pygame.font.Font(jetbrains, self.height // 32)
 
-    # Set up progress bar(s)
-    self.bar_width = self.width // 8
-    self.bar_height = 7*self.height // 8
-    self.bar_x_offset = 13*self.width // 32
-    bar_x = ((self.width - self.bar_width) // 2 - self.bar_x_offset,
-             (self.width - self.bar_width) // 2 + self.bar_x_offset)
-    self.bar_rects = [pygame.Rect(x, (self.height - self.bar_height)//2, 
-                                self.bar_width, self.bar_height) for x in bar_x]
-
   def update_styles(self):
     global Color
+
+    # Use the styles provided if they are not None
+    if self.styles is not None:
+      Color = color_factory(self.styles)
+      return
+
     # Use default styles if no styles file is provided
     if self.styles_path is None:
       Color = color_factory({})
@@ -210,8 +217,6 @@ class IceClock:
     text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))                              
     self.screen.blit(text, text_rect)
 
-
-
   def render_detail_text(self):
     color = self.get_text_color()
 
@@ -254,14 +259,29 @@ class IceClock:
           text = pygame.transform.flip(text, False, True)
         self.screen.blit(text, text_rect)
 
-  def render_end_progress_bar(self):
+  def render_end_progress_bar(self):    
+    stones_per_end = self._server_config["stones_per_end"]
+
+    # Set up progress bar(s)
+    self.bar_width = self.width // 8
+    self.bar_height = 7*self.height // 8
+
+    # Calculate the height for each stone section then update the progress bar height
+    section_height = self.bar_height // stones_per_end
+    self.bar_height = section_height * stones_per_end
+    
+    self.bar_x_offset = 13*self.width // 32
+    bar_x = ((self.width - self.bar_width) // 2 - self.bar_x_offset,
+             (self.width - self.bar_width) // 2 + self.bar_x_offset)
+    self.bar_rects = [pygame.Rect(x, (self.height - self.bar_height)//2, 
+                                self.bar_width, self.bar_height) for x in bar_x]
+
     for rect in self.bar_rects:
       pygame.draw.rect(self.screen, Color.BAR_BG.value, rect, border_radius=self.height // 50)
 
     # Set the height of the progress bar
     # It is 1 - percentage so that the bar counts down instead of up
     # Round to an integer multiple of the number of stones per end
-    stones_per_end = self._server_config["stones_per_end"]
     percentage = int(stones_per_end * self._end_percentage) / stones_per_end
     filled_height = int(self.bar_height * (1-percentage))
     if self._is_overtime:
@@ -277,8 +297,6 @@ class IceClock:
 
     for rect in self.bar_rects:
       for i in range(stones_per_end):
-        # Calculate the height for each stone section
-        section_height = self.bar_height // stones_per_end
         section_rect = pygame.Rect(rect.x, rect.y + self.bar_height - (i + 1) * section_height,
                                     self.bar_width, section_height)
         # Alternate colors for each stone section
@@ -288,9 +306,10 @@ class IceClock:
           pygame.draw.rect(self.screen, color, section_rect, border_radius=self.height // 100)
 
         # Add dividers to progress bars for each stone
-        stone_div = pygame.Rect(rect.x, rect.y + i * section_height,
-                                self.bar_width, self.height // 250)
-        pygame.draw.rect(self.screen, Color.BAR_DIVIDER.value, stone_div)
+        if i < stones_per_end - 1:
+          stone_div = pygame.Rect(rect.x, rect.y + self.bar_height - (i + 1) * section_height,
+                                  self.bar_width, self.height // 250)
+          pygame.draw.rect(self.screen, Color.BAR_DIVIDER.value, stone_div)
 
   def render_end_progress_labels(self):
     color = self.get_text_color()
@@ -322,7 +341,8 @@ class IceClock:
     self.render_end_number()
 
     # Update the display
-    pygame.display.flip()
+    if not self.headless:
+      pygame.display.flip()
 
   def key_down_callback(self, event):
     '''
@@ -360,7 +380,20 @@ class IceClock:
         self.screen = pygame.display.set_mode((self.width, self.height))
       self.init_UI()
 
-      
+  def render_to_image(self, output):
+    self._hours = 1
+    self._minutes = 7
+    self._seconds = 30
+    self._end_number = 1
+    self._end_percentage = 0.5
+    self._is_overtime = False
+    self.render()
+    
+    pil_string_image = pygame.image.tostring(self.screen, "RGB", False)
+    pil_image = Image.frombytes('RGB', self.screen.get_size(), pil_string_image, 'raw')
+    pil_image.save(output, format="PNG")
+    pygame.quit()
+
   def run(self):
     # Main loop
     while self.running:
@@ -415,5 +448,5 @@ if __name__ == "__main__":
       sys.exit(1)
 
   # Start the front end
-  clock = IceClock(fullscreen=args.full_screen, styles=args.styles, jestermode=args.jester)
+  clock = IceClock(fullscreen=args.full_screen, styles=args.styles)
   clock.run()

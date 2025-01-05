@@ -144,6 +144,10 @@ input[type="radio"] {
   margin-right: 10px;
 }
 
+input[type="color"] {
+  padding: 0px;
+}
+
 /* Animations */
 .fade-in {
   opacity: 0;
