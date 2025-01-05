@@ -62,19 +62,24 @@ def index():
 
 @app.route('/style_preview', methods=['GET','POST'])
 def style_preview():
+  from app import color_factory
   styles = None
   if request.method == 'POST':
     style_str = request.form.get('styles')
     styles = {k: tuple(v) for k,v in json.loads(style_str).items()}
+    styles = {style.name: style.value for style in color_factory(styles)}
   
   if not styles:
-    styles = {}
+    styles = {style.name: style.value for style in color_factory({})}
 
-  return render_template('style_preview.html', styles=json.dumps(styles))
+  for style in styles:
+    styles[style] = "#{:02x}{:02x}{:02x}".format(*styles[style])
+
+  return render_template('style_preview.html', **styles)
 
 @app.route('/style_img', methods=['POST'])
 def style_img():
-  styles = {k: tuple(v) for k,v in json.loads(request.get_json()).items()}
+  styles = {k: tuple(v) for k,v in request.get_json().items()}
   
   import app
   img_io = io.BytesIO()
@@ -84,6 +89,17 @@ def style_img():
   
   img_io.seek(0)
   return send_file(img_io, mimetype='image/png')
+
+@app.route('/download_style', methods=['POST'])
+def download_style():
+  styles = {k: tuple(v) for k,v in request.get_json().items()}
+  output_content = json.dumps(styles, indent=2)
+
+  file_stream = io.BytesIO()
+  file_stream.write(output_content.encode('utf-8'))
+  file_stream.seek(0)
+
+  return send_file(file_stream, as_attachment=True, download_name="user_styles.json", mimetype="text/plain")
 
 @app.route('/version', methods=['GET'])
 def get_version():
