@@ -27,9 +27,16 @@ The following API routes are supported:
 |update|GET|Updates the configuration `key` with the specified `value`.|
 |reset|GET|Resets the start timestamp of the timer|
 |game_times|GET| Get the current time state of the timer|
+|load_profile|GET| Updates the server configuration from a preset profile specified by `name`|
 |shutdown|POST| Shuts down the server at the specified timestamp |
 
 The route `/game_times` returns everything needed by a front-end application to display the status of the timer. It uses the following data structure:
+| Key | Data type | Description |
+|-----|-----------|-------------|
+|times| dict | Computed values from server |
+|config| dict | Current server configuartion |
+
+The `times` dictionary uses the following data structure:
 | Key | Data type | Description |
 |-----|-----------|-------------|
 |hours| int | Number of hours to display on the timer |
@@ -38,10 +45,11 @@ The route `/game_times` returns everything needed by a front-end application to 
 |end_number| int | Ideal end number if keeping to the specified pace |
 |end_percentage| float | Percentage complete (out of 1) of the current end |
 |overtime| bool | True if the game is past the time allotted for that game and overtime is allowed |
-|time_per_end| int | Current setting of time per end in seconds |
 |total_time| int | Duration of the game in seconds |
 |uptime| int | How long the timer has been running in seconds |
 
+Preset profiles can be defined via a JSON file. The default file is named `server_profiles.json` and a customized file path can be
+specified via the `--profiles` flag.
 
 ## Front end
 An example PyGame front end is provided in `app.py` Simply run to start the front end.

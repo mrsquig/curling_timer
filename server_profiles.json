@@ -1,0 +1,23 @@
+{
+    "8ends": {        
+        "time_per_end": 900,
+        "num_ends": 8,
+        "count_direction": -1,
+        "allow_overtime": false,
+        "stones_per_end": 8
+    },
+    "6ends": {        
+        "time_per_end": 900,
+        "num_ends": 6,
+        "count_direction": -1,
+        "allow_overtime": false,
+        "stones_per_end": 8
+    },
+    "doubles": {        
+        "time_per_end": 600,
+        "num_ends": 8,
+        "count_direction": -1,
+        "allow_overtime": false,
+        "stones_per_end": 5
+    }
+}

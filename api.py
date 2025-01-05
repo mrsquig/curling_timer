@@ -1,15 +1,19 @@
 from flask import Flask, jsonify, request, render_template
 from datetime import datetime
 from config import ConfigValue, bool_type
+import json
 import argparse
 import time
 import sys
+import os
 
 try:
   USING_WAITRESS = True
   import waitress
 except ImportError:
   USING_WAITRESS = False
+
+PROFILES = {}
 
 def timestamp():
   return datetime.now().timestamp()
@@ -37,6 +41,9 @@ def index():
       stop_timer()
     elif "Reset" in request.form:
       reset_timer()
+    elif "LoadProfile" in request.form:
+      profile_name = request.form.get('profile_name')
+      update_config_with_profile(profile_name)
     else:
       app_config["num_ends"].value = request.form.get('num_ends')
       app_config["time_per_end"].value = request.form.get('time_per_end')
@@ -45,6 +52,8 @@ def index():
       app_config["stones_per_end"].value = request.form.get("stones_per_end")
 
   data = {key: value.value for key,value in app_config.items()}
+  data["profiles"] = PROFILES.keys()
+
   response, status = get_times()
   times = response.json.get("times")
   data.update(times)
@@ -167,11 +176,40 @@ def get_times():
   retVal = {"times": times, "config": {key: app_config[key].value for key in app_config}}
   return jsonify(retVal), 200
 
+@app.route('/load_profile', methods=['GET'])
+def load_profile():
+  name = request.args.get('name')
+  if not name:
+    return jsonify({"error": "Profile name not specified"}), 400
+
+  if name not in PROFILES:
+    return jsonify({"error": "Profile not found"}), 400
+
+  update_config_with_profile(name)
+  return jsonify({key: app_config[key].value for key in app_config}), 200
+
+def update_config_with_profile(profile_name):
+  for key in PROFILES[profile_name]:
+    app_config[key].value = PROFILES[profile_name][key]
+
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument("--host", default="0.0.0.0", help="host IP to bind to")
   parser.add_argument("--port", default="5000", type=int, help="port for server to listen on")
+  parser.add_argument("--profiles", default="server_profiles.json", help="file to read profiles from")
   args = parser.parse_args()
+
+  # Load the profiles from the file if it exists
+  if os.path.exists(args.profiles):
+    forbidden_keys = ("version", "is_timer_running", "start_timestamp", "stop_timestamp", "timer_stop_uptime")
+    with open(args.profiles, 'r') as f:
+      PROFILES = json.load(f)
+
+    # Remove forbidden keys from the profiles
+    for profile in PROFILES:
+      for key in forbidden_keys:
+        if key in profile:
+          del profile[key]
 
   if USING_WAITRESS:
     waitress.serve(app, host='0.0.0.0', port=args.port)
