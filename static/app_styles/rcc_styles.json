@@ -1,0 +1,12 @@
+{
+    "SCREEN_BG": [14, 36, 82],
+    "BAR_FG": [126, 104, 130],
+    "BAR_BG": [14, 36, 82],
+    "rcc_blue_from_logo": [82, 101, 140],
+    "rcc_green_from_logo": [72, 136, 123],
+    "rcc_purple_from_logo": [172, 154, 173],
+    "rcc_blue_from_maxon": [14, 36, 82],
+    "rcc_green_from_maxon": [0, 84, 61],
+    "rcc_purple_from_maxon": [126, 104, 130],
+    "rcc_gold_from_maxon": [255, 194, 14]
+}
