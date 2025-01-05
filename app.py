@@ -70,6 +70,11 @@ class IceClock:
 
     # Setup the styles
     self.styles_path = styles
+
+    if styles is not None:
+      styles_folder_path = os.path.join("static", "app_styles")
+      self.styles_path = styles if styles_folder_path in styles.lower() else os.path.join(styles_folder_path, styles)
+
     self.last_read_styles = None
     self.update_styles()
 
