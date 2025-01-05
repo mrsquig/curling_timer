@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <title>Curling timer</title>
+</head>
+<body>
+    <h1>Curling timer style configuration</h1>
+    <div class="card">
+        <form name="styles_form" method="POST">
+            <textarea name="styles" rows="10" cols="100%">{{ styles }}</textarea>
+            <br />
+            <button type="button" id="preview_style_btn">Preview Styles</button>
+            <button type="submit" id="save_style_btn">Save Styles</button>
+        </form>
+    </div>
+ 
+    <div class="card">
+        <img id="generated_image" width="100%">
+    </div>
+
+    <script>
+        document.getElementById('preview_style_btn').addEventListener('click', function() {
+            event.preventDefault();
+
+            // Collect form data
+            inputData = document.forms['styles_form']['styles'].value;
+
+            // Send input data as JSON to the server
+            fetch('/style_img', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(inputData),
+            })
+            .then(response => response.blob())  // Get the image blob response
+            .then(imageBlob => {
+                // Create a URL for the image blob
+                const imageUrl = URL.createObjectURL(imageBlob);
+
+                // Show the generated image
+                const img = document.getElementById('generated_image');
+                img.src = imageUrl;
+                img.style.display = 'block';
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+</html>

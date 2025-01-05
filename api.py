@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, send_file
 from datetime import datetime
 from config import ConfigValue, bool_type
 import json
@@ -6,6 +6,7 @@ import argparse
 import time
 import sys
 import os
+import io
 
 try:
   USING_WAITRESS = True
@@ -58,6 +59,31 @@ def index():
   times = response.json.get("times")
   data.update(times)
   return render_template('index.html', **data)
+
+@app.route('/style_preview', methods=['GET','POST'])
+def style_preview():
+  styles = None
+  if request.method == 'POST':
+    style_str = request.form.get('styles')
+    styles = {k: tuple(v) for k,v in json.loads(style_str).items()}
+  
+  if not styles:
+    styles = {}
+
+  return render_template('style_preview.html', styles=json.dumps(styles))
+
+@app.route('/style_img', methods=['POST'])
+def style_img():
+  styles = {k: tuple(v) for k,v in json.loads(request.get_json()).items()}
+  
+  import app
+  img_io = io.BytesIO()
+  clock = app.IceClock(headless=True, styles=styles)
+  clock._server_config = {k: v.value for k,v in app_config.items()}
+  clock.render_to_image(img_io)
+  
+  img_io.seek(0)
+  return send_file(img_io, mimetype='image/png')
 
 @app.route('/version', methods=['GET'])
 def get_version():

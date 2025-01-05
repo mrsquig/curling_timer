@@ -12,6 +12,7 @@ import pygame
 import time
 import logging
 import json
+from PIL import Image
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('curling_timer')
 logger.setLevel(logging.INFO)
@@ -64,16 +65,20 @@ def color_factory(colors=None):
   return Color
 
 class IceClock:
-  def __init__(self, width=1280, height=720, fullscreen=False, styles=None):
+  def __init__(self, width=1280, height=720, fullscreen=False, styles_path=None, styles=None, headless=False):
     # Initialize Pygame
     pygame.init()
 
     # Setup the styles
-    self.styles_path = styles
+    self.styles_path = styles_path
+    self.styles = styles
 
-    if styles is not None:
+    style_args_valid = (styles_path is not None or styles is not None) or (styles_path is None and styles is None)
+    assert style_args_valid, "Either styles_path or styles must be provided, but not both."
+
+    if styles_path is not None:
       styles_folder_path = os.path.join("static", "app_styles")
-      self.styles_path = styles if styles_folder_path in styles.lower() else os.path.join(styles_folder_path, styles)
+      self.styles_path = styles_path if styles_folder_path in styles_path.lower() else os.path.join(styles_folder_path, styles_path)
 
     self.last_read_styles = None
     self.update_styles()
@@ -82,20 +87,26 @@ class IceClock:
     # We need to do this before setting up the window so that we 
     # can get the accurate screen resolution.
     info = pygame.display.Info()
+    self.headless = headless
     self.fs_width = info.current_w
     self.fs_height = info.current_h    
     self.window_width = width
     self.window_height = height
 
-    # Set up the display -- start in window mode
-    self.width = width if not fullscreen else self.fs_width
-    self.height = height if not fullscreen else self.fs_height
-    if not fullscreen:
-      self.screen = pygame.display.set_mode((self.width, self.height))
-    else:
-      self.screen = pygame.display.set_mode((self.width, self.height), pygame.FULLSCREEN)
-    pygame.mouse.set_visible(not fullscreen)
-    pygame.display.set_caption("Ice Clock")
+    if not headless:    
+      # Set up the display -- start in window mode
+      self.width = width if not fullscreen else self.fs_width
+      self.height = height if not fullscreen else self.fs_height
+      if not fullscreen:
+        self.screen = pygame.display.set_mode((self.width, self.height))
+      else:
+        self.screen = pygame.display.set_mode((self.width, self.height), pygame.FULLSCREEN)
+      pygame.mouse.set_visible(not fullscreen)
+      pygame.display.set_caption("Ice Clock")
+    else:      
+      self.width = self.fs_width
+      self.height = self.fs_height
+      self.screen = pygame.Surface((self.width, self.height))
 
     # Initialize UI elements
     self.init_UI()
@@ -130,6 +141,12 @@ class IceClock:
 
   def update_styles(self):
     global Color
+
+    # Use the styles provided if they are not None
+    if self.styles is not None:
+      Color = color_factory(self.styles)
+      return
+
     # Use default styles if no styles file is provided
     if self.styles_path is None:
       Color = color_factory({})
@@ -300,7 +317,8 @@ class IceClock:
     self.render_end_number()
 
     # Update the display
-    pygame.display.flip()
+    if not self.headless:
+      pygame.display.flip()
 
   def key_down_callback(self, event):
     '''
@@ -337,6 +355,20 @@ class IceClock:
         self.height = self.window_height
         self.screen = pygame.display.set_mode((self.width, self.height))
       self.init_UI()
+
+  def render_to_image(self, output):
+    self._hours = 1
+    self._minutes = 7
+    self._seconds = 30
+    self._end_number = 1
+    self._end_percentage = 0.5
+    self._is_overtime = False
+    self.render()
+    
+    pil_string_image = pygame.image.tostring(self.screen, "RGB", False)
+    pil_image = Image.frombytes('RGB', self.screen.get_size(), pil_string_image, 'raw')
+    pil_image.save(output, format="PNG")
+    pygame.quit()
 
   def run(self):
     # Main loop
@@ -390,5 +422,5 @@ if __name__ == "__main__":
       sys.exit(1)
 
   # Start the front end
-  clock = IceClock(fullscreen=args.full_screen, styles=args.styles)
+  clock = IceClock(fullscreen=args.full_screen, styles_path=args.styles)
   clock.run()
