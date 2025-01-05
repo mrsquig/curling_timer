@@ -14,7 +14,7 @@
         "stones_per_end": 8
     },
     "doubles": {        
-        "time_per_end": 720,
+        "time_per_end": 675,
         "num_ends": 8,
         "count_direction": -1,
         "allow_overtime": false,
