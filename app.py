@@ -21,8 +21,6 @@ SERVER_PORT = None
 SERVER_PROCESS = None
 CONFIG_UPDATE_TIME_LIMIT = 30
 Color = None
-kingmode = 0
-jestermode = 0
 
 def timestamp():
   return datetime.datetime.now().timestamp()
@@ -65,12 +63,11 @@ def color_factory(colors=None):
     BAR_BG = colors["BAR_BG"] if "BAR_BG" in colors else (50, 50, 50)
     BAR_DIVIDER = colors["BAR_DIVIDER"] if "BAR_DIVIDER" in colors else (255,255,255)
     OT = colors["OT"] if "OT" in colors else (160, 80, 40)
-    GOLD = colors["GOLD"] if "GOLD" in colors else(255, 194, 14)
     SPENT_STONE = colors["SPENT_STONE"] if "SPENT_STONE" in colors else SCREEN_BG
   return Color
 
 class IceClock:
-  def __init__(self, width=1280, height=720, fullscreen=False, styles=None):
+  def __init__(self, width=1280, height=720, fullscreen=False, styles=None, jestermode=False):
     # Initialize Pygame
     pygame.init()
 
@@ -110,6 +107,7 @@ class IceClock:
     self.start_time = datetime.datetime.now()
     self.running = True
     self.fullscreen = fullscreen
+    self.jestermode = jestermode
 
   def init_UI(self):
     '''
@@ -225,7 +223,7 @@ class IceClock:
     else:
       text = self.fonts["last_end"].render("", True, color)
   
-    text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 6.5*self.height // 16))        
+    text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 6.5*self.height // 16))
     self.screen.blit(text, text_rect)
   
   def render_end_number(self):
@@ -235,30 +233,30 @@ class IceClock:
       end_num = self._end_number if self._end_number < self._server_config["num_ends"] else self._server_config["num_ends"]
       text = self.fonts["end"].render("{:d}".format(end_num), True, color)
       text_rect = text.get_rect(center=(self.center["x"] - 2*self.width // 32, self.center["y"] - 3*self.height // 16))
-      if jestermode == 1:
-        text = pygame.transform.flip(text, False, True)   
+      if self.jestermode:
+        text = pygame.transform.flip(text, False, True)
       self.screen.blit(text, text_rect)
       
       text = self.fonts["timer"].render("/{:d}".format(self._server_config["num_ends"]), True, color)
       text_rect = text.get_rect(center=(self.center["x"] + 3*self.width // 32, self.center["y"] - 3*self.height // 16))
-      if jestermode == 1:
-        text = pygame.transform.flip(text, False, True)  
+      if self.jestermode:
+        text = pygame.transform.flip(text, False, True)
       self.screen.blit(text, text_rect)
     else:
       text = self.fonts["end"].render("OT", True, color)
-      if jestermode == 1:
-        text = pygame.transform.flip(text, False, True)  
+      if self.jestermode:
+        text = pygame.transform.flip(text, False, True)
       text_rect = text.get_rect(center=(self.center["x"], self.center["y"] - 3*self.height // 16))
       
       # Blink the "OT" text on for one second and off for one second when over time
       if not self._is_overtime or self._seconds % 2:
-        if jestermode == 1:
-          text = pygame.transform.flip(text, False, True)  
+        if self.jestermode:
+          text = pygame.transform.flip(text, False, True)
         self.screen.blit(text, text_rect)
 
   def render_end_progress_bar(self):
     for rect in self.bar_rects:
-        pygame.draw.rect(self.screen, Color.BAR_BG.value, rect, border_radius=self.height // 50)
+      pygame.draw.rect(self.screen, Color.BAR_BG.value, rect, border_radius=self.height // 50)
 
     # Set the height of the progress bar
     # It is 1 - percentage so that the bar counts down instead of up
@@ -267,44 +265,32 @@ class IceClock:
     percentage = int(stones_per_end * self._end_percentage) / stones_per_end
     filled_height = int(self.bar_height * (1-percentage))
     if self._is_overtime:
-        # Timer is expired and overtime is allowed
-        filled_height = int(self.bar_height)
+      # Timer is expired and overtime is allowed
+      filled_height = int(self.bar_height)
     elif self._end_number > self._server_config["num_ends"]:
-        # Timer is expired, but overtime is not allowed
-        filled_height = 0
+      # Timer is expired, but overtime is not allowed
+      filled_height = 0
 
     # Two colors for the stones represents two teams and more contrast for better visibility
-    if kingmode == 1:
-      color1 = Color.GOLD.value
-      # "Silver"
-      color2 = (192, 192, 192)
-    elif jestermode == 1:
-      # Red
-      color1 = (255, 0, 0)
-      # Green
-      color2 = (0, 255, 0)
-    else:
-      color1 = Color.BAR_FG1.value
-      color2 = Color.BAR_FG2.value
+    color1 = Color.BAR_FG1.value if not self.jestermode else (255, 0, 0)
+    color2 = Color.BAR_FG2.value if not self.jestermode else (0, 255, 0)
 
     for rect in self.bar_rects:
-        for i in range(stones_per_end):
-            # Calculate the height for each stone section
-            section_height = self.bar_height // stones_per_end
-            section_rect = pygame.Rect(rect.x, rect.y + self.bar_height - (i + 1) * section_height,
-                                       self.bar_width, section_height)
-            # Alternate colors for each stone section
-            # Even Stones are purple, Odd Stones are Green
-            color = color1 if i % 2 == 0 else color2
-            if (i + 1) * section_height <= filled_height:
-                pygame.draw.rect(self.screen, color, section_rect, border_radius=self.height // 100)
+      for i in range(stones_per_end):
+        # Calculate the height for each stone section
+        section_height = self.bar_height // stones_per_end
+        section_rect = pygame.Rect(rect.x, rect.y + self.bar_height - (i + 1) * section_height,
+                                    self.bar_width, section_height)
+        # Alternate colors for each stone section
+        # Even Stones are purple, Odd Stones are Green
+        color = color1 if i % 2 == 0 else color2
+        if (i + 1) * section_height <= filled_height:
+          pygame.draw.rect(self.screen, color, section_rect, border_radius=self.height // 100)
 
         # Add dividers to progress bars for each stone
-        # AJM - removed this as it made the progress bar look funny
-        #for i in range(stones_per_end):
-        #    stone_div = pygame.Rect(rect.x, rect.y + i * section_height,
-        #                            self.bar_width, self.height // 250)
-        #    pygame.draw.rect(self.screen, Color.BAR_DIVIDER.value, stone_div)
+        stone_div = pygame.Rect(rect.x, rect.y + i * section_height,
+                                self.bar_width, self.height // 250)
+        pygame.draw.rect(self.screen, Color.BAR_DIVIDER.value, stone_div)
 
   def render_end_progress_labels(self):
     color = self.get_text_color()
@@ -411,15 +397,12 @@ if __name__ == "__main__":
   parser.add_argument("--port", default="5000", help="port that backend server is listening on")
   parser.add_argument("--full-screen", "-f", action="store_true", default=False, help="launch in full screen mode")
   parser.add_argument("--styles", "-s", default=None, help="path to JSON file with color styles")
-  parser.add_argument("-k", "--king", action="store_true", help="KING_MODE", required=False)
-  parser.add_argument("-j", "--jester", action="store_true", help="JESTER_MODE", required=False)
+  parser.add_argument("-j", "--jester", action="store_true", help=argparse.SUPPRESS, required=False)
   args = parser.parse_args()
   
   # Set the variable based on the argument 
   HOST_IP = args.host
   SERVER_PORT = args.port
-  kingmode = 1 if args.king else 0
-  jestermode = 1 if args.jester else 0
 
   # Start the server if it is not already running
   if not check_server():
@@ -432,5 +415,5 @@ if __name__ == "__main__":
       sys.exit(1)
 
   # Start the front end
-  clock = IceClock(fullscreen=args.full_screen, styles=args.styles)
+  clock = IceClock(fullscreen=args.full_screen, styles=args.styles, jestermode=args.jester)
   clock.run()
