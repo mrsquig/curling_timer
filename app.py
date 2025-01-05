@@ -20,7 +20,6 @@ HOST_IP = None
 SERVER_PORT = None
 SERVER_PROCESS = None
 CONFIG_UPDATE_TIME_LIMIT = 30
-NUM_STONES_PER_END = 8
 Color = None
 
 def timestamp():
@@ -156,7 +155,7 @@ class IceClock:
 
   @property
   def total_time(self):
-    return self._num_ends * self._time_per_end
+    return self._server_config["num_ends"] * self._server_config["time_per_end"]
 
   def update_time(self):
     '''
@@ -168,23 +167,24 @@ class IceClock:
       response = requests.get('http://{:s}:{:s}/game_times'.format(HOST_IP, SERVER_PORT))
     except Exception as e:
       return f"Error: {e}"
+
+    times = response.json().get("times")
+    self._server_config = response.json().get("config")
     
-    self._hours = response.json().get("hours")
-    self._minutes = response.json().get("minutes")
-    self._seconds = response.json().get("seconds")
-    self._end_number = response.json().get("end_number")
-    self._end_percentage = response.json().get("end_percentage")
-    self._is_overtime = response.json().get("is_overtime")
-    self._num_ends = response.json().get("num_ends")
-    self._time_per_end = response.json().get("time_per_end")
-    self._uptime = response.json().get("uptime")
+    self._hours = times["hours"]
+    self._minutes = times["minutes"]
+    self._seconds = times["seconds"]
+    self._end_number = times["end_number"]
+    self._end_percentage = times["end_percentage"]
+    self._is_overtime = times["is_overtime"]
+    self._uptime = times["uptime"]
 
   def get_text_color(self):
-    if self._end_number < self._num_ends - 1:
+    if self._end_number < self._server_config["num_ends"] - 1:
       color = Color.TEXT.value
-    elif self._end_number == self._num_ends - 1:
+    elif self._end_number == self._server_config["num_ends"] - 1:
       color = Color.TEXT_END_MINUS1.value
-    elif self._end_number == self._num_ends:
+    elif self._end_number == self._server_config["num_ends"]:
       color = Color.TEXT_LASTEND.value
     else:
       color = Color.OT.value
@@ -205,7 +205,7 @@ class IceClock:
   def render_detail_text(self):
     color = self.get_text_color()
 
-    is_last_end = self._end_number >= self._num_ends
+    is_last_end = self._end_number >= self._server_config["num_ends"]
     if is_last_end and not self._is_overtime:
       text = self.fonts["last_end"].render("LAST END", True, color)
     elif self._is_overtime:
@@ -220,12 +220,12 @@ class IceClock:
     color = self.get_text_color()
 
     if not self._is_overtime:
-      end_num = self._end_number if self._end_number < self._num_ends else self._num_ends
+      end_num = self._end_number if self._end_number < self._server_config["num_ends"] else self._server_config["num_ends"]
       text = self.fonts["end"].render("{:d}".format(end_num), True, color)
       text_rect = text.get_rect(center=(self.center["x"] - 2*self.width // 32, self.center["y"] - 3*self.height // 16))
       self.screen.blit(text, text_rect)
       
-      text = self.fonts["timer"].render("/{:d}".format(self._num_ends), True, color)
+      text = self.fonts["timer"].render("/{:d}".format(self._server_config["num_ends"]), True, color)
       text_rect = text.get_rect(center=(self.center["x"] + 3*self.width // 32, self.center["y"] - 3*self.height // 16))
       self.screen.blit(text, text_rect)
     else:
@@ -243,12 +243,13 @@ class IceClock:
     # Set the height of the progress bar
     # It is 1 - percentage so that the bar counts down instead of up
     # Round to an integer multiple of the number of stones per end
-    percentage = int(NUM_STONES_PER_END*self._end_percentage)/NUM_STONES_PER_END
+    stones_per_end = self._server_config["stones_per_end"]
+    percentage = int(stones_per_end*self._end_percentage)/stones_per_end
     filled_height = int(self.bar_height * (1 - percentage))
     if self._is_overtime:
       # Timer is expired and over time is allowed
       filled_height = int(self.bar_height)
-    elif self._end_number > self._num_ends:
+    elif self._end_number > self._server_config["num_ends"]:
       # Timer is expired, but over time is not allowed
       filled_height = 0    
 
@@ -259,8 +260,8 @@ class IceClock:
       pygame.draw.rect(self.screen, color, filled_rect, border_radius = self.height//50)
 
       # Add dividers to progress bars for each stone
-      for i in range(NUM_STONES_PER_END):
-        stone_div = pygame.Rect(rect.x, rect.y + i*self.bar_height//8,
+      for i in range(stones_per_end):
+        stone_div = pygame.Rect(rect.x, rect.y + i*self.bar_height//stones_per_end,
                            self.bar_width, self.height//100)
         pygame.draw.rect(self.screen, Color.SCREEN_BG.value, stone_div)
 

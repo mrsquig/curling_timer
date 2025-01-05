@@ -24,7 +24,8 @@ app_config = {
     "timer_stop_uptime": ConfigValue(0, int),
     "count_direction": ConfigValue(-1, int),
     "allow_overtime": ConfigValue(False, bool_type),
-    "is_timer_running": ConfigValue(False, bool_type)
+    "is_timer_running": ConfigValue(False, bool_type),
+    "stones_per_end": ConfigValue(8, int)
 }
 
 @app.route('/', methods=['GET','POST'])
@@ -41,10 +42,12 @@ def index():
       app_config["time_per_end"].value = request.form.get('time_per_end')
       app_config["count_direction"].value = request.form.get('count_direction')
       app_config["allow_overtime"].value = request.form.get("allow_overtime")
+      app_config["stones_per_end"].value = request.form.get("stones_per_end")
 
   data = {key: value.value for key,value in app_config.items()}
-  times, status = get_times()
-  data.update(times.json)
+  response, status = get_times()
+  times = response.json.get("times")
+  data.update(times)
   return render_template('index.html', **data)
 
 @app.route('/version', methods=['GET'])
@@ -132,10 +135,6 @@ def get_times():
   times = {}
   times["uptime"] = uptime
 
-  # Copy number of ends and time per end into dictionary to return
-  times["num_ends"] = app_config["num_ends"].value
-  times["time_per_end"] = app_config["time_per_end"].value
-
   # End number and percentage are always based on the uptime of the timer
   times["end_number"] = uptime // app_config["time_per_end"].value + 1
   times["end_percentage"] = uptime/app_config["time_per_end"].value - times["end_number"] + 1
@@ -162,8 +161,11 @@ def get_times():
   times["hours"] = game_time // 3600
   times["minutes"] = (game_time // 60) % 60
   times["seconds"] = game_time % 60
-    
-  return jsonify(times), 200
+
+  # Include the server config in the returned value for convenience and to limit
+  # network traffic required to update the front end
+  retVal = {"times": times, "config": {key: app_config[key].value for key in app_config}}
+  return jsonify(retVal), 200
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
