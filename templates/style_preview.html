@@ -6,12 +6,44 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
     <title>Curling timer</title>
+    <style>
+        #color_picker {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        #color_labels {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        #color_inputs {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+    </style>
 </head>
 <body>
     <h1>Curling timer style configuration</h1>
-    <div class="card">
+    <div class="card">        
         <form name="styles_form" method="POST">
-            <textarea name="styles" rows="10" cols="100%">{{ styles }}</textarea>
+            <div id="color_picker">
+                <div id="color_labels">
+                    <label for="screen_bg">Screen background:</label>
+                    <label for="text_color">Main text color:</label>
+                    <label for="bar_fg">Progress bar foreground color:</label>
+                    <label for="bar_bg">Progress bar background color:</label>
+                </div>
+                <div id="color_inputs">
+                    <input type="color" id="screen_bg" name="screen_bg" value={{SCREEN_BG}} />
+                    <input type="color" id="text_color" name="text_color" value={{TEXT}} />
+                    <input type="color" id="bar_fg" name="bar_fg" value={{BAR_FG}} />
+                    <input type="color" id="bar_bg" name="bar_bg" value={{BAR_BG}} />
+                </div>
+            </div>
             <br />
             <button type="button" id="preview_style_btn">Preview Styles</button>
             <button type="submit" id="save_style_btn">Save Styles</button>
@@ -23,11 +55,41 @@
     </div>
 
     <script>
+        function hexToRgb(hex) {
+            // Remove the '#' if it exists
+            hex = hex.replace(/^#/, '');
+
+            // If the hex code is shorthand (e.g., "#03F"), expand it to full form
+            if (hex.length === 3) {
+                hex = hex.split('').map(function (hexChar) {
+                    return hexChar + hexChar;
+                }).join('');
+            }
+
+            // Convert the hex values to RGB and return as an array
+            let r = parseInt(hex.substring(0, 2), 16);
+            let g = parseInt(hex.substring(2, 4), 16);
+            let b = parseInt(hex.substring(4, 6), 16);
+
+            return [r, g, b];  // Return as an array of integers
+        }
+
+        function get_form_data() {            
+            inputData = {
+                'SCREEN_BG': hexToRgb(document.forms['styles_form']['screen_bg'].value),
+                'TEXT': hexToRgb(document.forms['styles_form']['text_color'].value),
+                'BAR_FG': hexToRgb(document.forms['styles_form']['bar_fg'].value),
+                'BAR_BG': hexToRgb(document.forms['styles_form']['bar_bg'].value),
+            };
+
+            return inputData;
+        }
+
         document.getElementById('preview_style_btn').addEventListener('click', function() {
             event.preventDefault();
 
             // Collect form data
-            inputData = document.forms['styles_form']['styles'].value;
+            inputData = get_form_data();
 
             // Send input data as JSON to the server
             fetch('/style_img', {
@@ -46,6 +108,32 @@
                 const img = document.getElementById('generated_image');
                 img.src = imageUrl;
                 img.style.display = 'block';
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        
+
+        document.getElementById('save_style_btn').addEventListener('click', function() {
+            event.preventDefault();
+
+            // Collect form data
+            inputData = get_form_data();
+
+            // Send input data as JSON to the server
+            fetch('/download_style', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(inputData),
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = "user_styles.json";
+                link.click();
             })
             .catch(error => console.error('Error:', error));
         });
