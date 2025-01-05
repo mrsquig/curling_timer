@@ -64,7 +64,6 @@ def color_factory(colors=None):
     BAR_BG = colors["BAR_BG"] if "BAR_BG" in colors else (50, 50, 50)
     BAR_DIVIDER = colors["BAR_DIVIDER"] if "BAR_DIVIDER" in colors else (255,255,255)
     OT = colors["OT"] if "OT" in colors else (160, 80, 40)
-    SPENT_STONE = colors["SPENT_STONE"] if "SPENT_STONE" in colors else SCREEN_BG
   return Color
 
 class IceClock:

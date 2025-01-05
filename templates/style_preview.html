@@ -34,14 +34,18 @@
                 <div id="color_labels">
                     <label for="screen_bg">Screen background:</label>
                     <label for="text_color">Main text color:</label>
-                    <label for="bar_fg">Progress bar foreground color:</label>
+                    <label for="bar_fg">Progress bar foreground first color:</label>
+                    <label for="bar_fg">Progress bar foreground second color:</label>
                     <label for="bar_bg">Progress bar background color:</label>
+                    <label for="bar_bg">Progress bar divider color:</label>
                 </div>
                 <div id="color_inputs">
                     <input type="color" id="screen_bg" name="screen_bg" value={{SCREEN_BG}} />
                     <input type="color" id="text_color" name="text_color" value={{TEXT}} />
-                    <input type="color" id="bar_fg" name="bar_fg" value={{BAR_FG}} />
+                    <input type="color" id="bar_fg1" name="bar_fg1" value={{BAR_FG1}} />
+                    <input type="color" id="bar_fg2" name="bar_fg2" value={{BAR_FG2}} />
                     <input type="color" id="bar_bg" name="bar_bg" value={{BAR_BG}} />
+                    <input type="color" id="bar_divider" name="bar_divider" value={{BAR_DIVIDER}} />
                 </div>
             </div>
             <br />
@@ -78,8 +82,10 @@
             inputData = {
                 'SCREEN_BG': hexToRgb(document.forms['styles_form']['screen_bg'].value),
                 'TEXT': hexToRgb(document.forms['styles_form']['text_color'].value),
-                'BAR_FG': hexToRgb(document.forms['styles_form']['bar_fg'].value),
+                'BAR_FG1': hexToRgb(document.forms['styles_form']['bar_fg1'].value),
+                'BAR_FG2': hexToRgb(document.forms['styles_form']['bar_fg2'].value),
                 'BAR_BG': hexToRgb(document.forms['styles_form']['bar_bg'].value),
+                'BAR_DIVIDER': hexToRgb(document.forms['styles_form']['bar_divider'].value),
             };
 
             return inputData;

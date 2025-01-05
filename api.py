@@ -67,10 +67,9 @@ def style_preview():
   if request.method == 'POST':
     style_str = request.form.get('styles')
     styles = {k: tuple(v) for k,v in json.loads(style_str).items()}
-    styles = {style.name: style.value for style in color_factory(styles)}
-  
-  if not styles:
-    styles = {style.name: style.value for style in color_factory({})}
+    styles = {name: color.value for name, color in color_factory(styles).__members__.items()}
+  else:
+    styles = {name: color.value for name, color in color_factory({}).__members__.items()}
 
   for style in styles:
     styles[style] = "#{:02x}{:02x}{:02x}".format(*styles[style])
