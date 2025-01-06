@@ -12,7 +12,6 @@ import pygame
 import time
 import logging
 import json
-from PIL import Image
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('curling_timer')
 logger.setLevel(logging.INFO)
@@ -388,10 +387,9 @@ class IceClock:
     self._end_percentage = 0.5
     self._is_overtime = False
     self.render()
-    
-    pil_string_image = pygame.image.tostring(self.screen, "RGB", False)
-    pil_image = Image.frombytes('RGB', self.screen.get_size(), pil_string_image, 'raw')
-    pil_image.save(output, format="PNG")
+
+    pygame.image.save(self.screen, output, "PNG")
+    output.seek(0)
     pygame.quit()
 
   def run(self):
