@@ -64,13 +64,18 @@
 
         <form name="load_profile" method="POST">
             <h3>Load server configuration profile</h3>
-            <select name="profile_name">
-                <option value="empty"></option>
+            <select id="profile_name" name="profile_name">
+                <option value="empty">Select a profile</option>
                 {% for profile in profiles %}
                     <option value="{{ profile }}">{{ profile }}</option>
                 {% endfor %}
             </select>
             <br />
+            <div>
+                <h4>Profile Description</h4>
+                <div id="profile_description">None</div>
+            </div>
+            
             <button type="submit" name="LoadProfile">Load Profile</button>
         </form>
     </div>
@@ -113,6 +118,29 @@
                 timePerEnd_Input.value = timePerEnd * 60;
             }
         }
+
+        document.getElementById('profile_name').addEventListener('change', function() {
+            event.preventDefault();
+
+            // Get selected profile name
+            selectedProfile = this.value;
+
+            // Send input data as JSON to the server
+            fetch('/get_profile_description', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(selectedProfile),
+            })
+            .then(response => response.json())  
+            .then(json => {
+                //this will be undefined if they re-select the default "Select a profile" dropdown option
+                if (json["description"] === undefined) json["description"] = "None";
+                document.getElementById('profile_description').innerHTML = json["description"];
+            })
+            .catch(error => console.error('Error:', error));
+        });
     </script>
 </body>
 </html>

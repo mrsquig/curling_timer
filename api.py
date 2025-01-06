@@ -229,6 +229,18 @@ def load_profile():
   update_config_with_profile(name)
   return jsonify({key: app_config[key].value for key in app_config}), 200
 
+@app.route('/get_profile_description', methods=['POST'])
+def get_profile_description():
+  profile_name = request.get_json()
+
+  if not profile_name:
+    return jsonify({"error": "Profile name not specified"}), 400
+
+  if profile_name not in PROFILES:
+    return jsonify({"error": "Profile not found"}), 400
+  
+  return jsonify({"description": PROFILES[profile_name]["description"]}), 200
+
 def update_config_with_profile(profile_name):
   for key in PROFILES[profile_name]:
     app_config[key].value = PROFILES[profile_name][key]
