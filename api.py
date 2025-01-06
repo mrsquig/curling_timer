@@ -30,11 +30,13 @@ app_config = {
     "count_direction": ConfigValue(-1, int),
     "allow_overtime": ConfigValue(False, bool_type),
     "is_timer_running": ConfigValue(False, bool_type),
-    "stones_per_end": ConfigValue(8, int)
+    "stones_per_end": ConfigValue(8, int),
+    "bonspiel": ConfigValue(False, bool_type)
 }
 
 @app.route('/', methods=['GET','POST'])
 def index(): 
+  global app_config
   if request.method == 'POST':
     if "Start" in request.form:
       start_timer()
@@ -43,9 +45,15 @@ def index():
     elif "Reset" in request.form:
       reset_timer()
     elif "LoadProfile" in request.form:
+      if app_config["is_timer_running"].value and app_config["bonspiel"].value:
+        return jsonify({"error": "Cannot update config while timer is running in bonspiel mode"}), 400
+
       profile_name = request.form.get('profile_name')
       update_config_with_profile(profile_name)
     else:
+      if app_config["is_timer_running"].value and app_config["bonspiel"].value:
+        return jsonify({"error": "Cannot update config while timer is running in bonspiel mode"}), 400
+
       app_config["num_ends"].value = request.form.get('num_ends')
       app_config["time_per_end"].value = request.form.get('time_per_end')
       app_config["count_direction"].value = request.form.get('count_direction')
@@ -118,6 +126,9 @@ def query_key():
 @app.route('/update', methods=['GET'])
 def update_config():
   global app_config
+  if app_config["is_timer_running"].value and app_config["bonspiel"].value:
+    return jsonify({"error": "Cannot update config while timer is running in bonspiel mode"}), 400
+
   key = request.args.get('key')
   if not key:
     return jsonify({"error": "No key provided"}), 400
@@ -219,6 +230,13 @@ def get_times():
 
 @app.route('/load_profile', methods=['GET'])
 def load_profile():
+  global app_config
+  print(app_config["is_timer_running"].value and app_config["bonspiel"].value)
+  print(app_config["is_timer_running"].value)
+  print(app_config["bonspiel"].value)
+  if app_config["is_timer_running"].value and app_config["bonspiel"].value:
+    return jsonify({"error": "Cannot update config while timer is running in bonspiel mode"}), 400
+
   name = request.args.get('name')
   if not name:
     return jsonify({"error": "Profile name not specified"}), 400
