@@ -19,5 +19,12 @@
         "count_direction": -1,
         "allow_overtime": false,
         "stones_per_end": 5
+    },
+    "happy_hour": {        
+        "time_per_end": 1050,
+        "num_ends": 6,
+        "count_direction": -1,
+        "allow_overtime": false,
+        "stones_per_end": 8
     }
 }
