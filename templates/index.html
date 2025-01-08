@@ -9,87 +9,92 @@
 </head>
 <body>
     <h1>Curling timer configuration</h1>
-    <div class="card">
-        <form name="timerActions" method="POST">
-            <h3>Timer Controls</h3>
-            <br />
-            <button type="submit" name="Start" style="background-color: green;">Start Timer</button>
-            <button type="submit" name="Stop" style="background-color: red;">Stop Timer</button>
-            <button type="submit" name="Reset" style="background-color: blue;">Reset Timer</button>
-        </form>
-    </div>
-    <div class="card">
-        <form name="timerOptions" onsubmit="submitPreprocessing();" method="POST">
-            <h3>Timer Options</h3>
-            <br />
-            <label for="num_ends">Number of ends:</label><br>
-            <input type="text" id="num_ends" name="num_ends" value="{{num_ends}}" required><br>
-            
-            <label for="time_per_end">Time per end:</label><br>
-            <input type="text" id="time_per_end" name="time_per_end" value="{{time_per_end}}" required>
-            
-            <label for="time_per_end_seconds">Seconds</label>
-            <input type="radio" id="time_per_end_seconds" name="time_per_end_unit" value="sec" checked/>
-            <label for="time_per_end_minutes">Minutes</label>
-            <input type="radio" id="time_per_end_minutes" name="time_per_end_unit" value="min"/>
-            <br />
-            
-            <label for="stones_per_end">Stones per end:</label><br>
-            <input type="text" id="stones_per_end" name="stones_per_end" value="{{stones_per_end}}" required>
-
-            <fieldset>
-                <legend>Allow overtime:</legend>                
-                <label for="allow_ot_true">True</label>
-                <input type="radio" id="allow_ot_true" name="allow_overtime" value="1" {% if allow_overtime %} checked {% endif %}/>
-                <label for="allow_ot_false">False</label>
-                <input type="radio" id="allow_ot_false" name="allow_overtime" value="0" {% if not allow_overtime %} checked {% endif %} />
-            </fieldset>
-
-            <fieldset>
-                <legend>Timer direction:</legend>                
-                <label for="countdown">Count down</label>
-                <input type="radio" id="countdown" name="count_direction" value="-1" {% if count_direction == -1 %} checked {% endif %}/>
-                <label for="countup">Count up</label>
-                <input type="radio" id="countup" name="count_direction" value="1"  {% if count_direction == 1 %} checked {% endif %}/>
-            </fieldset>
-            <br />
-            <button type="submit" name="Save">Save Options</button>
-        </form>
-    </div>
-   
-    <div class="card">
-        <h3>Style configuration</h3>
-        <p>Click <a href="{{url_for('style_preview')}}">here</a> for creating styles for the front end.</p>
-        <br/>
-
-        <form name="load_profile" method="POST">
-            <h3>Load server configuration profile</h3>
-            <select id="profile_name" name="profile_name">
-                <option value="empty">Select a profile</option>
-                {% for profile in profiles %}
-                    <option value="{{ profile }}">{{ profile }}</option>
-                {% endfor %}
-            </select>
-            <br />
-            <div>
-                <h4>Profile Description</h4>
-                <div id="profile_description">None</div>
+    <div class="flex-container">
+        <div class="flex-item">
+            <div class="card">
+                <form name="timerActions" method="POST">
+                    <h3>Timer Controls</h3>
+                    <br />
+                    <button type="submit" name="Start" style="background-color: green;">Start Timer</button>
+                    <button type="submit" name="Stop" style="background-color: red;">Stop Timer</button>
+                    <button type="submit" name="Reset" style="background-color: blue;">Reset Timer</button>
+                </form>
             </div>
-            
-            <button type="submit" name="LoadProfile">Load Profile</button>
-        </form>
-    </div>
-
-    <div class="card">
-        <div>
-            <h3>Current timer value</h3>
-            <span>{{"{:02d}:{:02d}:{:02d}".format(hours, minutes,seconds)}}</span>
+            <div class="card">
+                <form name="timerOptions" onsubmit="submitPreprocessing();" method="POST">
+                    <h3>Timer Options</h3>
+                    <br />
+                    <label for="num_ends">Number of ends:</label><br>
+                    <input type="text" id="num_ends" name="num_ends" value="{{num_ends}}" required><br>
+                    
+                    <label for="time_per_end">Time per end:</label><br>
+                    <input type="text" id="time_per_end" name="time_per_end" value="{{time_per_end}}" required>
+                    
+                    <label for="time_per_end_seconds">Seconds</label>
+                    <input type="radio" id="time_per_end_seconds" name="time_per_end_unit" value="sec" checked/>
+                    <label for="time_per_end_minutes">Minutes</label>
+                    <input type="radio" id="time_per_end_minutes" name="time_per_end_unit" value="min"/>
+                    <br />
+                    
+                    <label for="stones_per_end">Stones per end:</label><br>
+                    <input type="text" id="stones_per_end" name="stones_per_end" value="{{stones_per_end}}" required>
+        
+                    <fieldset>
+                        <legend>Allow overtime:</legend>                
+                        <label for="allow_ot_true">True</label>
+                        <input type="radio" id="allow_ot_true" name="allow_overtime" value="1" {% if allow_overtime %} checked {% endif %}/>
+                        <label for="allow_ot_false">False</label>
+                        <input type="radio" id="allow_ot_false" name="allow_overtime" value="0" {% if not allow_overtime %} checked {% endif %} />
+                    </fieldset>
+        
+                    <fieldset>
+                        <legend>Timer direction:</legend>                
+                        <label for="countdown">Count down</label>
+                        <input type="radio" id="countdown" name="count_direction" value="-1" {% if count_direction == -1 %} checked {% endif %}/>
+                        <label for="countup">Count up</label>
+                        <input type="radio" id="countup" name="count_direction" value="1"  {% if count_direction == 1 %} checked {% endif %}/>
+                    </fieldset>
+                    <br />
+                    <button type="submit" name="Save">Save Options</button>
+                </form>
+            </div>
         </div>
-        <div>
-            <h3>Target end</h3>
-            <span>End number: {{ end_number }}</span><br />
-            <span>Percentage of complete of target end: {{ "{:0.2f}".format(100*end_percentage) }}</span><br />
-            <span>Overtime: {{ overtime }}</span><br />
+        <div class="flex-item">
+            <div class="card">
+                <h3>Style configuration</h3>
+                <p>Click <a href="{{url_for('style_preview')}}">here</a> for creating styles for the front end.</p>
+                <br/>
+        
+                <form name="load_profile" method="POST">
+                    <h3>Load server configuration profile</h3>
+                    <select id="profile_name" name="profile_name">
+                        <option value="empty">Select a profile</option>
+                        {% for profile in profiles %}
+                            <option value="{{ profile }}">{{ profile }}</option>
+                        {% endfor %}
+                    </select>
+                    <br />
+                    <div>
+                        <h4>Profile Description</h4>
+                        <div id="profile_description">None</div>
+                    </div>
+                    
+                    <button type="submit" name="LoadProfile">Load Profile</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div>
+                    <h3>Current timer value</h3>
+                    <span>{{"{:02d}:{:02d}:{:02d}".format(hours, minutes,seconds)}}</span>
+                </div>
+                <div>
+                    <h3>Target end</h3>
+                    <span>End number: {{ end_number }}</span><br />
+                    <span>Percentage of complete of target end: {{ "{:0.2f}".format(100*end_percentage) }}</span><br />
+                    <span>Overtime: {{ overtime }}</span><br />
+                </div>
+            </div>
         </div>
     </div>
 
