@@ -281,6 +281,12 @@ def add_message():
 @app.route('/cycle_profile', methods=['GET'])
 def cycle_profile():
   global PROFILE_ID
+
+  # If the timer is running, don't allow the profile to be cycled
+  if app_config["is_timer_running"].value:
+    logger.warning("Cannot cycle profile while timer is running")
+    return jsonify({key: app_config[key].value for key in app_config}), 200
+
   profile_names = list(PROFILES.keys())
   if PROFILE_ID >= len(profile_names):
     PROFILE_ID = 0
