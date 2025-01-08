@@ -30,13 +30,18 @@ app_config = {
     "count_direction": ConfigValue(-1, int),
     "allow_overtime": ConfigValue(False, bool_type),
     "is_timer_running": ConfigValue(False, bool_type),
-    "stones_per_end": ConfigValue(8, int)
+    "stones_per_end": ConfigValue(8, int),
+    "is_game_complete": ConfigValue(False, bool_type)
 }
 
 @app.route('/', methods=['GET','POST'])
 def index(): 
   if request.method == 'POST':
     if "Start" in request.form:
+      # If previous game is done (timer done counting and overtime not allowed), then reset timer and start again
+      if app_config["is_game_complete"].value:
+        reset_timer()
+      
       start_timer()
     elif "Stop" in request.form:
       stop_timer()
@@ -164,6 +169,7 @@ def reset_timer():
     app_config["start_timestamp"].value = time
     app_config["stop_timestamp"].value = time
 
+  app_config["is_game_complete"].value = False
   app_config["timer_stop_uptime"].value = 0
 
   #always stop timer when reseting time
@@ -202,6 +208,9 @@ def get_times():
   if uptime >= times["total_time"] and not app_config["allow_overtime"].value:
     stop_timer()
     game_time = 0 if app_config["count_direction"].value < 0 else times["total_time"]
+    app_config["is_game_complete"].value = True
+  else:
+    app_config["is_game_complete"].value = False
 
   # If we're over time, then return how far over time we are
   if times["is_overtime"] and app_config["count_direction"].value < 0:
@@ -256,7 +265,8 @@ if __name__ == '__main__':
 
   # Load the profiles from the file if it exists
   if os.path.exists(args.profiles):
-    forbidden_keys = ("version", "is_timer_running", "start_timestamp", "stop_timestamp", "timer_stop_uptime")
+    forbidden_keys = ("version", "is_timer_running", "start_timestamp", "stop_timestamp",
+                      "timer_stop_uptime", "is_game_complete")
     with open(args.profiles, 'r') as f:
       PROFILES = json.load(f)
 
