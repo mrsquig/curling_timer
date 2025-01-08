@@ -251,6 +251,9 @@ def get_profile_description():
   return jsonify({"description": PROFILES[profile_name]["description"]}), 200
 
 def update_config_with_profile(profile_name):
+  if profile_name not in PROFILES:
+    return
+
   for key in PROFILES[profile_name]:
     if key == "description":
       continue
