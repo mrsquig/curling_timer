@@ -243,6 +243,8 @@ def get_profile_description():
 
 def update_config_with_profile(profile_name):
   for key in PROFILES[profile_name]:
+    if key == "description":
+      continue
     app_config[key].value = PROFILES[profile_name][key]
 
 if __name__ == '__main__':
