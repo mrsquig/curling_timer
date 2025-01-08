@@ -59,6 +59,7 @@ def index():
 
   data = {key: value.value for key,value in app_config.items()}
   data["profiles"] = PROFILES.keys()
+  data["selected_profile_name"] = request.form.get('profile_name', None)
 
   response, status = get_times()
   times = response.json.get("times")

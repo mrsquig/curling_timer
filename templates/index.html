@@ -23,14 +23,13 @@
             <div class="card">
                 <h3>Style configuration</h3>
                 <p>Click <a href="{{url_for('style_preview')}}">here</a> for creating styles for the front end.</p>
-                <br/>
-        
+                <br/>        
                 <form name="load_profile" method="POST">
                     <h3>Load server configuration profile</h3>
                     <select id="profile_name" name="profile_name">
                         <option value="empty">Select a profile</option>
                         {% for profile in profiles %}
-                            <option value="{{ profile }}">{{ profile }}</option>
+                            <option value="{{ profile }}" {% if profile == selected_profile_name %}selected{% endif %}>{{ profile }}</option>
                         {% endfor %}
                     </select>
                     <br />
@@ -45,7 +44,7 @@
         </div>
         <div class="flex-item">
             <div class="card">
-                <form name="timerOptions" onsubmit="submitPreprocessing();" method="POST">
+                <form id="timerOptions" name="timerOptions" onsubmit="submitPreprocessing();" method="POST">
                     <h3>Timer Options</h3>
                     <br />
                     <label for="num_ends">Number of ends:</label><br>
@@ -123,11 +122,9 @@
             }
         }
 
-        document.getElementById('profile_name').addEventListener('change', function() {
-            event.preventDefault();
-
+        function updateDescription() {
             // Get selected profile name
-            selectedProfile = this.value;
+            selectedProfile = document.getElementById('profile_name').value;
 
             // Send input data as JSON to the server
             fetch('/get_profile_description', {
@@ -144,7 +141,24 @@
                 document.getElementById('profile_description').innerHTML = json["description"];
             })
             .catch(error => console.error('Error:', error));
+        }
+
+        // Add event listener to the profile name dropdown to update the profile description
+        document.getElementById('profile_name').addEventListener('change', function(){            
+            event.preventDefault();
+            updateDescription();
         });
+
+        // If the form changes, then the profile has changed so we should no longer display
+        // the profile description or name
+        document.getElementById('timerOptions').addEventListener('change', function(){            
+            event.preventDefault();
+            document.getElementById('profile_name').value = "empty";
+            updateDescription();
+        });
+
+        // Update the profile description when the page loads
+        updateDescription();
     </script>
 </body>
 </html>
