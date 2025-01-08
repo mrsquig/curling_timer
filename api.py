@@ -251,11 +251,13 @@ def get_profile_description():
   return jsonify({"description": PROFILES[profile_name]["description"]}), 200
 
 def update_config_with_profile(profile_name):
-  if profile_name in PROFILES:
-    for key in PROFILES[profile_name]:
-      if key == "description":
-        continue
-      app_config[key].value = PROFILES[profile_name][key]
+  if profile_name not in PROFILES:
+    return
+
+  for key in PROFILES[profile_name]:
+    if key == "description":
+      continue
+    app_config[key].value = PROFILES[profile_name][key]
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
