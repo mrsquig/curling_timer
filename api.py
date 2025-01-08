@@ -264,7 +264,7 @@ def get_messages():
   return jsonify(output_messages), 200
 
 @app.route('/broadcast', methods=["GET", "POST"])
-def add_message():
+def broadcast_message():
   global MESSAGES
   if request.method == "POST":
     message = request.form.get('message', "")

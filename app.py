@@ -12,6 +12,7 @@ import pygame
 import time
 import logging
 import json
+import queue
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('curling_timer')
 logger.setLevel(logging.INFO)
@@ -21,6 +22,9 @@ SERVER_PORT = None
 SERVER_PROCESS = None
 CONFIG_UPDATE_TIME_LIMIT = 30
 MESSAGE_TIME_LIMIT = 10
+MESSAGE_CHR_SOFT_LIMIT = 10
+MESSAGE_CHR_HARD_LIMIT = 20
+MESSAGE_LINE_LIMIT = 3
 Color = None
 
 def timestamp():
@@ -135,7 +139,7 @@ class IceClock:
     self.fonts["last_end"] = pygame.font.Font(jetbrains, 2*self.height // 16)
     self.fonts["end"] = pygame.font.Font(jetbrains,  self.height // 2)
     self.fonts["end_progress_label"] = pygame.font.Font(jetbrains, self.height // 32)
-    self.fonts["messages"] = pygame.font.Font(jetbrains, self.height // 16)
+    self.fonts["messages"] = pygame.font.Font(jetbrains, 3*self.height // 32)
 
   def update_styles(self):
     global Color
@@ -333,12 +337,57 @@ class IceClock:
 
   def render_messages(self):
     # Render messages from the server
-    color = self.get_text_color()
-    msg = self._messages[-1]        
-    text = self.fonts["messages"].render(msg[0], True, color)
-    text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))
-    self.screen.blit(text, text_rect)
+    
+    # Get the latest message and put it in the message queue
+    msg = self._messages[-1]
+    chr_queue = queue.Queue()
+    for c in msg[0][0:MESSAGE_CHR_HARD_LIMIT*MESSAGE_LINE_LIMIT - 3]:
+      chr_queue.put(c)
 
+    # Split the message into lines
+    output_lines = []    
+    line_buf = ""
+    while not chr_queue.empty():
+      c = chr_queue.get()
+
+      if c == "\r":
+        continue
+
+      if c == "\n":
+        output_lines.append(line_buf)
+        line_buf = ""
+        continue
+
+      if len(line_buf) > MESSAGE_CHR_HARD_LIMIT:
+        line_buf += "-"
+        output_lines.append(line_buf)
+        line_buf = c
+        continue
+
+      if len(line_buf) >= MESSAGE_CHR_SOFT_LIMIT and c == " ":        
+        output_lines.append(line_buf)
+        line_buf = ""
+        continue
+
+      line_buf += c
+    
+    # Add the last line to the output. If the message was truncated, then
+    # add an ellipsis to the end of the line
+    if len(msg[0]) > MESSAGE_CHR_HARD_LIMIT*MESSAGE_LINE_LIMIT-3:
+      line_buf += "..."
+
+    output_lines.append(line_buf)
+    Nlines = len(output_lines)
+
+    # Render the message to the screen
+    line_offset = self.height // 8
+    color = self.get_text_color()
+    for i, line in enumerate(output_lines):      
+      text = self.fonts["messages"].render(line, True, color)
+      text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16 + (i-Nlines+2)*line_offset))
+      self.screen.blit(text, text_rect)
+
+    # Filter the messages to remove old messages
     self._messages = list(filter(lambda x: x[1] + MESSAGE_TIME_LIMIT > timestamp(), self._messages))
 
   def get_messages(self):
