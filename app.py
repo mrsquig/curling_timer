@@ -400,7 +400,9 @@ class IceClock:
     except Exception as e:
       return f"Error: {e}"
 
-    messages = response.json()
+    messages = response.json().get("messages")
+    self._server_config = response.json().get("config")
+
     for msg in messages:
       self._messages.append((msg, timestamp()))
 

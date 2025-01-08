@@ -261,7 +261,7 @@ def get_messages():
   for message in MESSAGES:
     output_messages.append(message)
   MESSAGES = []
-  return jsonify(output_messages), 200
+  return jsonify({"messages": output_messages, "config": {key: app_config[key].value for key in app_config}}), 200
 
 @app.route('/broadcast', methods=["GET", "POST"])
 def broadcast_message():
