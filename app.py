@@ -20,6 +20,7 @@ HOST_IP = None
 SERVER_PORT = None
 SERVER_PROCESS = None
 CONFIG_UPDATE_TIME_LIMIT = 30
+MESSAGE_TIME_LIMIT = 10
 Color = None
 
 def timestamp():
@@ -69,6 +70,9 @@ class IceClock:
   def __init__(self, width=1280, height=720, fullscreen=False, styles_path=None, styles=None, jestermode=False, headless=False):
     # Initialize Pygame
     pygame.init()
+
+    # Initialize message stack
+    self._messages = []
 
     # Setup the styles
     self.styles_path = styles_path
@@ -131,6 +135,7 @@ class IceClock:
     self.fonts["last_end"] = pygame.font.Font(jetbrains, 2*self.height // 16)
     self.fonts["end"] = pygame.font.Font(jetbrains,  self.height // 2)
     self.fonts["end_progress_label"] = pygame.font.Font(jetbrains, self.height // 32)
+    self.fonts["messages"] = pygame.font.Font(jetbrains, self.height // 16)
 
   def update_styles(self):
     global Color
@@ -326,6 +331,30 @@ class IceClock:
         text_rect = txt.get_rect(center=(x_offset, y_offset))
         self.screen.blit(txt, text_rect)
 
+  def render_messages(self):
+    # Render messages from the server
+    color = self.get_text_color()
+    msg = self._messages[-1]        
+    text = self.fonts["messages"].render(msg[0], True, color)
+    text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))
+    self.screen.blit(text, text_rect)
+
+    self._messages = list(filter(lambda x: x[1] + MESSAGE_TIME_LIMIT > timestamp(), self._messages))
+
+  def get_messages(self):
+    '''
+    Get the latest messages from the REST API
+    '''
+
+    try:
+      response = requests.get('http://{:s}:{:s}/messages'.format(HOST_IP, SERVER_PORT))
+    except Exception as e:
+      return f"Error: {e}"
+
+    messages = response.json()
+    for msg in messages:
+      self._messages.append((msg, timestamp()))
+
   def render(self):
     '''
     Render all UI elements to the PyGame window
@@ -335,7 +364,12 @@ class IceClock:
     self.screen.fill(Color.SCREEN_BG.value)
     self.render_end_progress_bar()
     #self.render_end_progress_labels()
-    self.render_timer()
+
+    # If there are messages, render them and skip the timer
+    if self._messages:
+      self.render_messages()
+    else:
+      self.render_timer()
     self.render_detail_text()
     self.render_end_number()
 
@@ -401,9 +435,18 @@ class IceClock:
         if event.type == pygame.KEYDOWN:
           self.key_down_callback(event)
 
-      self.update_time()
+      # If there are messages, then we can skip updating the time
+      if not self._messages:
+        self.update_time()
+
+      # Get the latest messages from the server and render all UI elements
+      self.get_messages()      
       self.render()
-      time.sleep(1)
+
+      # If there are messages, then update the UI more frequently. Otherwise,
+      # update once per second.
+      if not self._messages:
+        time.sleep(1)
 
   def teardown(self):
     '''

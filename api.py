@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request, render_template, send_file
 from datetime import datetime
 from config import ConfigValue, bool_type
+from collections import OrderedDict
 import json
 import argparse
 import time
@@ -14,7 +15,9 @@ try:
 except ImportError:
   USING_WAITRESS = False
 
-PROFILES = {}
+PROFILES = OrderedDict()
+PROFILE_ID = 0
+MESSAGES = []
 
 def timestamp():
   return datetime.now().timestamp()
@@ -251,6 +254,42 @@ def get_profile_description():
   
   return jsonify({"description": PROFILES[profile_name]["description"]}), 200
 
+@app.route('/messages', methods=['GET'])
+def get_messages():
+  global MESSAGES
+  output_messages = []
+  for message in MESSAGES:
+    output_messages.append(message)
+  MESSAGES = []
+  return jsonify(output_messages), 200
+
+@app.route('/broadcast', methods=["GET", "POST"])
+def add_message():
+  global MESSAGES
+  if request.method == "POST":
+    message = request.form.get('message', "")
+    if not message:
+      return render_template('broadcast_message.html', error="No message provided"), 200
+
+    if app_config["is_timer_running"].value:      
+      return render_template('broadcast_message.html', error="Cannot broadcast message while timer is running"), 200
+
+    MESSAGES.append(message)
+  
+  return render_template('broadcast_message.html'), 200
+
+@app.route('/cycle_profile', methods=['GET'])
+def cycle_profile():
+  global PROFILE_ID
+  profile_names = list(PROFILES.keys())
+  if PROFILE_ID >= len(profile_names):
+    PROFILE_ID = 0
+
+  update_config_with_profile(profile_names[PROFILE_ID])  
+  MESSAGES.append("Selected profile {}".format(profile_names[PROFILE_ID]))
+  PROFILE_ID += 1
+  return jsonify({key: app_config[key].value for key in app_config}), 200
+
 def update_config_with_profile(profile_name):
   if profile_name not in PROFILES:
     return
@@ -272,7 +311,11 @@ if __name__ == '__main__':
     forbidden_keys = ("version", "is_timer_running", "start_timestamp", "stop_timestamp",
                       "timer_stop_uptime", "is_game_complete")
     with open(args.profiles, 'r') as f:
-      PROFILES = json.load(f)
+      loaded_profiles = json.load(f)
+
+      # Copy loaded profiles into the PROFILES dictionary
+      for profile in loaded_profiles:
+        PROFILES[profile] = loaded_profiles[profile]
 
     # Remove forbidden keys from the profiles
     for profile in PROFILES:
