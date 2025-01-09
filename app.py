@@ -12,6 +12,7 @@ import pygame
 import time
 import logging
 import json
+import queue
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('curling_timer')
 logger.setLevel(logging.INFO)
@@ -20,6 +21,10 @@ HOST_IP = None
 SERVER_PORT = None
 SERVER_PROCESS = None
 CONFIG_UPDATE_TIME_LIMIT = 30
+MESSAGE_TIME_LIMIT = 10
+MESSAGE_CHR_SOFT_LIMIT = 10
+MESSAGE_CHR_HARD_LIMIT = 20
+MESSAGE_LINE_LIMIT = 3
 Color = None
 
 def timestamp():
@@ -69,6 +74,9 @@ class IceClock:
   def __init__(self, width=1280, height=720, fullscreen=False, styles_path=None, styles=None, jestermode=False, headless=False):
     # Initialize Pygame
     pygame.init()
+
+    # Initialize message stack
+    self._messages = []
 
     # Setup the styles
     self.styles_path = styles_path
@@ -131,6 +139,7 @@ class IceClock:
     self.fonts["last_end"] = pygame.font.Font(jetbrains, 2*self.height // 16)
     self.fonts["end"] = pygame.font.Font(jetbrains,  self.height // 2)
     self.fonts["end_progress_label"] = pygame.font.Font(jetbrains, self.height // 32)
+    self.fonts["messages"] = pygame.font.Font(jetbrains, 3*self.height // 32)
 
   def update_styles(self):
     global Color
@@ -326,6 +335,77 @@ class IceClock:
         text_rect = txt.get_rect(center=(x_offset, y_offset))
         self.screen.blit(txt, text_rect)
 
+  def render_messages(self):
+    # Render messages from the server
+    
+    # Get the latest message and put it in the message queue
+    msg = self._messages[-1]
+    chr_queue = queue.Queue()
+    for c in msg[0][0:MESSAGE_CHR_HARD_LIMIT*MESSAGE_LINE_LIMIT - 3]:
+      chr_queue.put(c)
+
+    # Split the message into lines
+    output_lines = []    
+    line_buf = ""
+    while not chr_queue.empty():
+      c = chr_queue.get()
+
+      if c == "\r":
+        continue
+
+      if c == "\n":
+        output_lines.append(line_buf)
+        line_buf = ""
+        continue
+
+      if len(line_buf) > MESSAGE_CHR_HARD_LIMIT:
+        line_buf += "-"
+        output_lines.append(line_buf)
+        line_buf = c
+        continue
+
+      if len(line_buf) >= MESSAGE_CHR_SOFT_LIMIT and c == " ":        
+        output_lines.append(line_buf)
+        line_buf = ""
+        continue
+
+      line_buf += c
+    
+    # Add the last line to the output. If the message was truncated, then
+    # add an ellipsis to the end of the line
+    if len(msg[0]) > MESSAGE_CHR_HARD_LIMIT*MESSAGE_LINE_LIMIT-3:
+      line_buf += "..."
+
+    output_lines.append(line_buf)
+    Nlines = len(output_lines)
+
+    # Render the message to the screen
+    line_offset = self.height // 8
+    color = self.get_text_color()
+    for i, line in enumerate(output_lines):      
+      text = self.fonts["messages"].render(line, True, color)
+      text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16 + (i-Nlines+2)*line_offset))
+      self.screen.blit(text, text_rect)
+
+    # Filter the messages to remove old messages
+    self._messages = list(filter(lambda x: x[1] + MESSAGE_TIME_LIMIT > timestamp(), self._messages))
+
+  def get_messages(self):
+    '''
+    Get the latest messages from the REST API
+    '''
+
+    try:
+      response = requests.get('http://{:s}:{:s}/messages'.format(HOST_IP, SERVER_PORT))
+    except Exception as e:
+      return f"Error: {e}"
+
+    messages = response.json().get("messages")
+    self._server_config = response.json().get("config")
+
+    for msg in messages:
+      self._messages.append((msg, timestamp()))
+
   def render(self):
     '''
     Render all UI elements to the PyGame window
@@ -335,7 +415,12 @@ class IceClock:
     self.screen.fill(Color.SCREEN_BG.value)
     self.render_end_progress_bar()
     #self.render_end_progress_labels()
-    self.render_timer()
+
+    # If there are messages, render them and skip the timer
+    if self._messages:
+      self.render_messages()
+    else:
+      self.render_timer()
     self.render_detail_text()
     self.render_end_number()
 
@@ -401,9 +486,18 @@ class IceClock:
         if event.type == pygame.KEYDOWN:
           self.key_down_callback(event)
 
-      self.update_time()
+      # If there are messages, then we can skip updating the time
+      if not self._messages:
+        self.update_time()
+
+      # Get the latest messages from the server and render all UI elements
+      self.get_messages()      
       self.render()
-      time.sleep(1)
+
+      # If there are messages, then update the UI more frequently. Otherwise,
+      # update once per second.
+      if not self._messages:
+        time.sleep(1)
 
   def teardown(self):
     '''

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <title>Curling timer</title>
+    </style>
+</head>
+<body>
+    <h1>Broadcast message</h1>
+    {% if error %}
+        <div class="card"><h3> {{ error }}</h3></div>
+    {% endif %}
+    <div class="card">        
+        <form name="broadcast" method="POST">
+            <textarea id="message" name="message" rows="4" cols="50" required></textarea>
+            <br />
+            <button type="submit" id="submit">Broadcast</button>
+        </form>
+    </div>
+</body>
+</html>
