@@ -30,7 +30,7 @@ Color = None
 def timestamp():
   return datetime.datetime.now().timestamp()
 
-def color_factory(colors=None):
+def color_factory(default_styles, colors=None):
   if colors is None:
     colors = {}
 
@@ -59,15 +59,16 @@ def color_factory(colors=None):
     colors.pop(key)
 
   class Color(Enum):
-    SCREEN_BG = colors["SCREEN_BG"] if "SCREEN_BG" in colors else (0, 0, 0)
-    TEXT = colors["TEXT"] if "TEXT" in colors else (255, 255, 255)  
-    TEXT_END_MINUS1 = colors["TEXT_END_MINUS1"] if "TEXT_END_MINUS1" in colors else (255, 204, 42)
-    TEXT_LASTEND = colors["TEXT_LASTEND"] if "TEXT_LASTEND" in colors else (160, 80, 40)
-    BAR_FG1 = colors["BAR_FG1"] if "BAR_FG1" in colors else (40, 80, 160)
-    BAR_FG2 = colors["BAR_FG2"] if "BAR_FG2" in colors else (126, 104, 130)
-    BAR_BG = colors["BAR_BG"] if "BAR_BG" in colors else (50, 50, 50)
-    BAR_DIVIDER = colors["BAR_DIVIDER"] if "BAR_DIVIDER" in colors else (255,255,255)
-    OT = colors["OT"] if "OT" in colors else (160, 80, 40)
+    SCREEN_BG = colors["SCREEN_BG"] if "SCREEN_BG" in colors else default_styles["SCREEN_BG"]
+    TEXT = colors["TEXT"] if "TEXT" in colors else default_styles["TEXT"]
+    TEXT_END_MINUS1 = colors["TEXT_END_MINUS1"] if "TEXT_END_MINUS1" in colors else default_styles["TEXT_END_MINUS1"]
+    TEXT_LASTEND = colors["TEXT_LASTEND"] if "TEXT_LASTEND" in colors else default_styles["TEXT_LASTEND"]
+    BAR_FG1 = colors["BAR_FG1"] if "BAR_FG1" in colors else default_styles["BAR_FG1"]
+    BAR_FG2 = colors["BAR_FG2"] if "BAR_FG2" in colors else default_styles["BAR_FG2"]
+    BAR_BG = colors["BAR_BG"] if "BAR_BG" in colors else default_styles["BAR_BG"]
+    BAR_DIVIDER = colors["BAR_DIVIDER"] if "BAR_DIVIDER" in colors else default_styles["BAR_DIVIDER"]
+    OT = colors["OT"] if "OT" in colors else default_styles["OT"]
+    
   return Color
 
 class IceClock:
@@ -81,6 +82,8 @@ class IceClock:
     # Setup the styles
     self.styles_path = styles_path
     self.styles = styles
+
+    self.load_default_styles()
 
     style_args_valid = (styles_path is not None or styles is not None) or (styles_path is None and styles is None)
     assert style_args_valid, "Either styles_path or styles must be provided, but not both."
@@ -141,17 +144,22 @@ class IceClock:
     self.fonts["end_progress_label"] = pygame.font.Font(jetbrains, self.height // 32)
     self.fonts["messages"] = pygame.font.Font(jetbrains, 3*self.height // 32)
 
+  # Read styles from the default file
+  def load_default_styles(self):
+    with open(os.path.join("static", "app_styles", "default_styles.json"), "r") as f:
+      self.default_styles = {k: tuple(v) for k,v in json.load(f).items()}
+
   def update_styles(self):
     global Color
 
     # Use the styles provided if they are not None
     if self.styles is not None:
-      Color = color_factory(self.styles)
+      Color = color_factory(self.default_styles, self.styles)
       return
 
     # Use default styles if no styles file is provided
     if self.styles_path is None:
-      Color = color_factory({})
+      Color = color_factory(self.default_styles, {})
       return
 
     # Check if the styles file has been updated since last read
@@ -162,7 +170,7 @@ class IceClock:
     with open(self.styles_path, "r") as f:
       styles = {k: tuple(v) for k,v in json.load(f).items()}
     self.last_read_styles = os.path.getmtime(self.styles_path)
-    Color = color_factory(styles)
+    Color = color_factory(self.default_styles, styles)
 
   @property
   def center(self):
