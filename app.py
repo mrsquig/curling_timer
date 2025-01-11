@@ -13,6 +13,7 @@ import time
 import logging
 import json
 import queue
+import functools
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('curling_timer')
 logger.setLevel(logging.INFO)
@@ -30,10 +31,11 @@ Color = None
 def timestamp():
   return datetime.datetime.now().timestamp()
 
-def color_factory(default_styles, colors=None):
+def color_factory(colors=None):
   if colors is None:
     colors = {}
 
+  default_styles = load_default_styles()
   remove_keys = []
 
   for key in colors:
@@ -71,6 +73,13 @@ def color_factory(default_styles, colors=None):
     
   return Color
 
+@functools.cache
+def load_default_styles():
+  # Read styles from the default file
+  with open(os.path.join("static", "app_styles", "default_styles.json"), "r") as f:
+    default_styles = {k: tuple(v) for k,v in json.load(f).items()}
+  return default_styles
+
 class IceClock:
   def __init__(self, width=1280, height=720, fullscreen=False, styles_path=None, styles=None, jestermode=False, headless=False):
     # Initialize Pygame
@@ -82,8 +91,6 @@ class IceClock:
     # Setup the styles
     self.styles_path = styles_path
     self.styles = styles
-
-    self.load_default_styles()
 
     style_args_valid = (styles_path is not None or styles is not None) or (styles_path is None and styles is None)
     assert style_args_valid, "Either styles_path or styles must be provided, but not both."
@@ -144,22 +151,17 @@ class IceClock:
     self.fonts["end_progress_label"] = pygame.font.Font(jetbrains, self.height // 32)
     self.fonts["messages"] = pygame.font.Font(jetbrains, 3*self.height // 32)
 
-  # Read styles from the default file
-  def load_default_styles(self):
-    with open(os.path.join("static", "app_styles", "default_styles.json"), "r") as f:
-      self.default_styles = {k: tuple(v) for k,v in json.load(f).items()}
-
   def update_styles(self):
     global Color
 
     # Use the styles provided if they are not None
     if self.styles is not None:
-      Color = color_factory(self.default_styles, self.styles)
+      Color = color_factory(self.styles)
       return
 
     # Use default styles if no styles file is provided
     if self.styles_path is None:
-      Color = color_factory(self.default_styles, {})
+      Color = color_factory({})
       return
 
     # Check if the styles file has been updated since last read
@@ -170,7 +172,7 @@ class IceClock:
     with open(self.styles_path, "r") as f:
       styles = {k: tuple(v) for k,v in json.load(f).items()}
     self.last_read_styles = os.path.getmtime(self.styles_path)
-    Color = color_factory(self.default_styles, styles)
+    Color = color_factory(styles)
 
   @property
   def center(self):
