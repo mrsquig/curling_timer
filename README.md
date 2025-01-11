@@ -28,6 +28,12 @@ The following API routes are supported:
 |reset|GET|Resets the start timestamp of the timer|
 |game_times|GET| Get the current time state of the timer|
 |load_profile|GET| Updates the server configuration from a preset profile specified by `name`|
+|get_profile_description | GET | Get the plain-text description of the profile specified by `name` |
+|cycle_profile | GET | Change the server to the next profile |
+|messages | GET | Get messages sent from the server to the client. Messages are pushed to the stack, which is cleared when the client reads the messages. |
+|broadcast | GET, POST |  Used to broadcast a message from the server to the client |
+|style_img | POST | Render an image of the client using a certain style sheet |
+|download_style | POST | Download a client style sheet specified by user parameters |
 |shutdown|POST| Shuts down the server at the specified timestamp |
 
 The route `/game_times` returns everything needed by a front-end application to display the status of the timer. It uses the following data structure:
@@ -73,11 +79,19 @@ The colors of the front end elements can be customized by an optional style shee
 
 An example is as follows,
 
-```
-{
-    "SCREEN_BG": [127, 127, 127],
-    "BAR_FG": [127, 0, 200]
+```json
+{ 
+    "colors":
+    {
+        "SCREEN_BG": [127, 127, 127],
+        "BAR_FG": [127, 0, 200]
+    },
+    "parameters":
+    {
+        "color_every_nth": 2
+    }
 }
+
 ```
 
 The colors should be defined using integer values of red, green, and blue. The integers must be between 0 and 255. The file can be changed while the timer is running to change the styles on-the-fly.
@@ -87,8 +101,10 @@ The following keys can be defined:
 | Key | Description | Default value |
 |-----|-------------|---------------|
 |SCREEN_BG | Background color of the timer | (0, 0, 0) |
-|BAR_FG | Progress bar foreground color | (40, 80, 160) |
+|BAR_FG1 | Progress bar foreground color #1 | (40, 80, 160) |
+|BAR_FG2 | Progress bar foreground color #2 | (126, 104, 130) |
 |BAR_BG | Progress bar background color| (50, 50, 50) |
+|BAR_DIVIDER| Color of the line between sections of the progress bar | (255,255,255) |
 |TEXT | Main text color | (255, 255, 255)   |
 |TEXT_END_MINUS1 | Text color used for the second to last end | (255, 204, 42) |
 |TEXT_LASTEND | Text color used for the last end | (160, 80, 40) |
