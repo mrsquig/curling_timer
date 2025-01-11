@@ -69,30 +69,35 @@ def index():
   data.update(times)
   return render_template('index.html', **data)
 
-@app.route('/style_preview', methods=['GET','POST'])
+@app.route('/style_preview', methods=['GET'])
 def style_preview():
-  from app import color_factory
-  styles = None
-  if request.method == 'POST':
-    style_str = request.form.get('styles')
-    styles = {k: tuple(v) for k,v in json.loads(style_str).items()}
-    styles = {name: color.value for name, color in color_factory(styles).__members__.items()}
-  else:
-    styles = {name: color.value for name, color in color_factory({}).__members__.items()}
+  from app import color_factory, load_default_styles
+  styles = load_default_styles()
 
-  for style in styles:
-    styles[style] = "#{:02x}{:02x}{:02x}".format(*styles[style])
+  for style in styles["colors"]:
+    styles["colors"][style] = "#{:02x}{:02x}{:02x}".format(*styles["colors"][style])
 
-  return render_template('style_preview.html', **styles)
+  return render_template('style_preview.html', **styles["colors"])
 
 @app.route('/style_img', methods=['POST'])
 def style_img():
-  styles = {k: tuple(v) for k,v in request.get_json().items()}
-  
   import app
+  
+  styles = request.get_json()
+  styles["colors"] = {k: tuple(v) for k,v in styles["colors"].items()}
+  
   img_io = io.BytesIO()
   clock = app.IceClock(headless=True, styles=styles)
   clock._server_config = {k: v.value for k,v in app_config.items()}
+  total_time = app_config["time_per_end"].value * app_config["num_ends"].value
+  elapsed = 0.75 * app_config["time_per_end"].value
+
+  clock._hours = int((total_time-elapsed) // 3600)
+  clock._minutes = int(((total_time-elapsed) // 60) % 60)
+  clock._seconds = int((total_time-elapsed) % 60)
+  clock._end_number = 1
+  clock._end_percentage = 0.25
+  clock._is_overtime = False
   clock.render_to_image(img_io)
   
   img_io.seek(0)
@@ -100,7 +105,8 @@ def style_img():
 
 @app.route('/download_style', methods=['POST'])
 def download_style():
-  styles = {k: tuple(v) for k,v in request.get_json().items()}
+  styles = request.get_json()
+  styles["colors"] = {k: tuple(v) for k,v in styles["colors"].items()}
   output_content = json.dumps(styles, indent=2)
 
   file_stream = io.BytesIO()

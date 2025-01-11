@@ -18,6 +18,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('curling_timer')
 logger.setLevel(logging.INFO)
 
+BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+
 HOST_IP = None
 SERVER_PORT = None
 SERVER_PROCESS = None
@@ -61,23 +63,24 @@ def color_factory(colors=None):
     colors.pop(key)
 
   class Color(Enum):
-    SCREEN_BG = colors["SCREEN_BG"] if "SCREEN_BG" in colors else default_styles["SCREEN_BG"]
-    TEXT = colors["TEXT"] if "TEXT" in colors else default_styles["TEXT"]
-    TEXT_END_MINUS1 = colors["TEXT_END_MINUS1"] if "TEXT_END_MINUS1" in colors else default_styles["TEXT_END_MINUS1"]
-    TEXT_LASTEND = colors["TEXT_LASTEND"] if "TEXT_LASTEND" in colors else default_styles["TEXT_LASTEND"]
-    BAR_FG1 = colors["BAR_FG1"] if "BAR_FG1" in colors else default_styles["BAR_FG1"]
-    BAR_FG2 = colors["BAR_FG2"] if "BAR_FG2" in colors else default_styles["BAR_FG2"]
-    BAR_BG = colors["BAR_BG"] if "BAR_BG" in colors else default_styles["BAR_BG"]
-    BAR_DIVIDER = colors["BAR_DIVIDER"] if "BAR_DIVIDER" in colors else default_styles["BAR_DIVIDER"]
-    OT = colors["OT"] if "OT" in colors else default_styles["OT"]
+    SCREEN_BG = colors["SCREEN_BG"] if "SCREEN_BG" in colors else default_styles["colors"]["SCREEN_BG"]
+    TEXT = colors["TEXT"] if "TEXT" in colors else default_styles["colors"]["TEXT"]
+    TEXT_END_MINUS1 = colors["TEXT_END_MINUS1"] if "TEXT_END_MINUS1" in colors else default_styles["colors"]["TEXT_END_MINUS1"]
+    TEXT_LASTEND = colors["TEXT_LASTEND"] if "TEXT_LASTEND" in colors else default_styles["colors"]["TEXT_LASTEND"]
+    BAR_FG1 = colors["BAR_FG1"] if "BAR_FG1" in colors else default_styles["colors"]["BAR_FG1"]
+    BAR_FG2 = colors["BAR_FG2"] if "BAR_FG2" in colors else default_styles["colors"]["BAR_FG2"]
+    BAR_BG = colors["BAR_BG"] if "BAR_BG" in colors else default_styles["colors"]["BAR_BG"]
+    BAR_DIVIDER = colors["BAR_DIVIDER"] if "BAR_DIVIDER" in colors else default_styles["colors"]["BAR_DIVIDER"]
+    OT = colors["OT"] if "OT" in colors else default_styles["colors"]["OT"]
     
   return Color
 
 @functools.cache
 def load_default_styles():
   # Read styles from the default file
-  with open(os.path.join("static", "app_styles", "default_styles.json"), "r") as f:
-    default_styles = {k: tuple(v) for k,v in json.load(f).items()}
+  with open(os.path.join(BASE_PATH, "static", "app_styles", "default_styles.json"), "r") as f:
+    default_styles = json.load(f)
+    default_styles["colors"] = {k: tuple(v) for k,v in default_styles["colors"].items()}
   return default_styles
 
 class IceClock:
@@ -95,9 +98,11 @@ class IceClock:
     style_args_valid = (styles_path is not None or styles is not None) or (styles_path is None and styles is None)
     assert style_args_valid, "Either styles_path or styles must be provided, but not both."
 
+    styles_folder_path = os.path.join(BASE_PATH, "static", "app_styles")
     if styles_path is not None:
-      styles_folder_path = os.path.join("static", "app_styles")
       self.styles_path = styles_path if styles_folder_path in styles_path.lower() else os.path.join(styles_folder_path, styles_path)
+    else:
+      self.styles_path = os.path.join(styles_folder_path, "default_styles.json")
 
     self.last_read_styles = None
     self.update_styles()
@@ -143,7 +148,7 @@ class IceClock:
     '''
     # Set up the fonts
     #courier = pygame.font.match_font("couriernew", bold=True)
-    jetbrains = os.path.join("ttf", "JetBrainsMono-Medium.ttf")
+    jetbrains = os.path.join(BASE_PATH, "ttf", "JetBrainsMono-Medium.ttf")
     self.fonts = {}
     self.fonts["timer"] = pygame.font.Font(jetbrains, 3*self.height // 16)
     self.fonts["last_end"] = pygame.font.Font(jetbrains, 2*self.height // 16)
@@ -156,7 +161,7 @@ class IceClock:
 
     # Use the styles provided if they are not None
     if self.styles is not None:
-      Color = color_factory(self.styles)
+      Color = color_factory(self.styles["colors"])
       return
 
     # Use default styles if no styles file is provided
@@ -170,9 +175,10 @@ class IceClock:
 
     # Read the styles from the file
     with open(self.styles_path, "r") as f:
-      styles = {k: tuple(v) for k,v in json.load(f).items()}
+      self.styles = json.load(f)
+      self.styles["colors"] = {k: tuple(v) for k,v in self.styles["colors"].items()}
     self.last_read_styles = os.path.getmtime(self.styles_path)
-    Color = color_factory(styles)
+    Color = color_factory(self.styles["colors"])
 
   @property
   def center(self):
@@ -318,8 +324,8 @@ class IceClock:
         section_rect = pygame.Rect(rect.x, rect.y + self.bar_height - (i + 1) * section_height,
                                     self.bar_width, section_height)
         # Alternate colors for each stone section
-        # Even Stones are purple, Odd Stones are Green
-        color = color1 if i % 2 == 0 else color2
+        color_mod = 2*self.styles["parameters"]["color_every_nth"]
+        color = color1 if i % color_mod < int(color_mod/2) else color2
         if (i + 1) * section_height <= filled_height:
           pygame.draw.rect(self.screen, color, section_rect, border_radius=self.height // 100)
 
@@ -475,12 +481,14 @@ class IceClock:
       self.init_UI()
 
   def render_to_image(self, output):
-    self._hours = 1
-    self._minutes = 7
-    self._seconds = 30
-    self._end_number = 1
-    self._end_percentage = 0.5
-    self._is_overtime = False
+    if (self._hours is None or self._minutes is None or self._seconds is None
+        or self._end_number is None or self._end_percentage is None or self._is_overtime is None):
+      self._hours = 1
+      self._minutes = 7
+      self._seconds = 30
+      self._end_number = 1
+      self._end_percentage = 0.5
+      self._is_overtime = False
     self.render()
 
     pygame.image.save(self.screen, output, "PNG")
