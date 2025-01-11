@@ -13,6 +13,7 @@ import time
 import logging
 import json
 import queue
+import functools
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('curling_timer')
 logger.setLevel(logging.INFO)
@@ -34,6 +35,7 @@ def color_factory(colors=None):
   if colors is None:
     colors = {}
 
+  default_styles = load_default_styles()
   remove_keys = []
 
   for key in colors:
@@ -59,16 +61,24 @@ def color_factory(colors=None):
     colors.pop(key)
 
   class Color(Enum):
-    SCREEN_BG = colors["SCREEN_BG"] if "SCREEN_BG" in colors else (0, 0, 0)
-    TEXT = colors["TEXT"] if "TEXT" in colors else (255, 255, 255)  
-    TEXT_END_MINUS1 = colors["TEXT_END_MINUS1"] if "TEXT_END_MINUS1" in colors else (255, 204, 42)
-    TEXT_LASTEND = colors["TEXT_LASTEND"] if "TEXT_LASTEND" in colors else (160, 80, 40)
-    BAR_FG1 = colors["BAR_FG1"] if "BAR_FG1" in colors else (40, 80, 160)
-    BAR_FG2 = colors["BAR_FG2"] if "BAR_FG2" in colors else (126, 104, 130)
-    BAR_BG = colors["BAR_BG"] if "BAR_BG" in colors else (50, 50, 50)
-    BAR_DIVIDER = colors["BAR_DIVIDER"] if "BAR_DIVIDER" in colors else (255,255,255)
-    OT = colors["OT"] if "OT" in colors else (160, 80, 40)
+    SCREEN_BG = colors["SCREEN_BG"] if "SCREEN_BG" in colors else default_styles["SCREEN_BG"]
+    TEXT = colors["TEXT"] if "TEXT" in colors else default_styles["TEXT"]
+    TEXT_END_MINUS1 = colors["TEXT_END_MINUS1"] if "TEXT_END_MINUS1" in colors else default_styles["TEXT_END_MINUS1"]
+    TEXT_LASTEND = colors["TEXT_LASTEND"] if "TEXT_LASTEND" in colors else default_styles["TEXT_LASTEND"]
+    BAR_FG1 = colors["BAR_FG1"] if "BAR_FG1" in colors else default_styles["BAR_FG1"]
+    BAR_FG2 = colors["BAR_FG2"] if "BAR_FG2" in colors else default_styles["BAR_FG2"]
+    BAR_BG = colors["BAR_BG"] if "BAR_BG" in colors else default_styles["BAR_BG"]
+    BAR_DIVIDER = colors["BAR_DIVIDER"] if "BAR_DIVIDER" in colors else default_styles["BAR_DIVIDER"]
+    OT = colors["OT"] if "OT" in colors else default_styles["OT"]
+    
   return Color
+
+@functools.cache
+def load_default_styles():
+  # Read styles from the default file
+  with open(os.path.join("static", "app_styles", "default_styles.json"), "r") as f:
+    default_styles = {k: tuple(v) for k,v in json.load(f).items()}
+  return default_styles
 
 class IceClock:
   def __init__(self, width=1280, height=720, fullscreen=False, styles_path=None, styles=None, jestermode=False, headless=False):
