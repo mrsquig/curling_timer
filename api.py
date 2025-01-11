@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, render_template, send_file
 from datetime import datetime
 from config import ConfigValue, bool_type
 from collections import OrderedDict
+import copy
 import json
 import argparse
 import time
@@ -71,8 +72,10 @@ def index():
 
 @app.route('/style_preview', methods=['GET'])
 def style_preview():
-  from app import color_factory, load_default_styles
-  styles = load_default_styles()
+  from app import load_default_styles
+  # load_default_styles is cached, so we need to make a copy of the returned value
+  # to avoid modifying the original
+  styles = copy.deepcopy(load_default_styles())
 
   for style in styles["colors"]:
     styles["colors"][style] = "#{:02x}{:02x}{:02x}".format(*styles["colors"][style])
