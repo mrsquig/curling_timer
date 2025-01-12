@@ -24,11 +24,11 @@
         "description": "Standard 8 end doubles game."
     },
     "relaxed_6ends": {        
-        "time_per_end": 960,
+        "time_per_end": 1050,
         "num_ends": 6,
         "count_direction": -1,
         "allow_overtime": false,
         "stones_per_end": 8,
-        "description": "Slightly modified game for Happy Hour and 6@6 leagues. Allows 1:36 total game time for 6 ends."
+        "description": "Slightly modified game for Happy Hour and 6@6 leagues. Allows 1:45 total game time for 6 ends."
     }
 }
