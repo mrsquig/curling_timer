@@ -325,14 +325,18 @@ class IceClock:
                                     self.bar_width, section_height)
         # Alternate colors for each stone section
         color_mod = 2*self.styles["parameters"]["color_every_nth"]
-        color = color1 if i % color_mod < int(color_mod/2) else color2
+        color = color1 if i % color_mod < int(color_mod/2) else color2        
+        border_radius = self.height // 100 if i == 0 or i == stones_per_end - 1 else 0
         if (i + 1) * section_height <= filled_height:
-          pygame.draw.rect(self.screen, color, section_rect, border_radius=self.height // 100)
+          pygame.draw.rect(self.screen, color, section_rect, border_radius=border_radius)
 
         # Add dividers to progress bars for each stone
-        if i < stones_per_end - 1:
-          stone_div = pygame.Rect(rect.x, rect.y + self.bar_height - (i + 1) * section_height,
-                                  self.bar_width, self.height // 250)
+        if i:
+          divider_height = int(self.styles["parameters"]["divider_relative_height"]/1000 * self.height)
+          stone_div = pygame.Rect(rect.x, 
+                                  rect.y + self.bar_height - (i) * section_height - divider_height//2,
+                                  self.bar_width,
+                                  divider_height)
           pygame.draw.rect(self.screen, Color.BAR_DIVIDER.value, stone_div)
 
   def render_end_progress_labels(self):

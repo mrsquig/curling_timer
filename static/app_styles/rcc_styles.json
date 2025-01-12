@@ -16,6 +16,7 @@
     },
     "parameters":
     {
-        "color_every_nth": 2
+        "color_every_nth": 2,
+        "divider_relative_height": 5
     }
 }

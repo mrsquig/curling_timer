@@ -80,7 +80,7 @@ def style_preview():
   for style in styles["colors"]:
     styles["colors"][style] = "#{:02x}{:02x}{:02x}".format(*styles["colors"][style])
 
-  return render_template('style_preview.html', **styles["colors"])
+  return render_template('style_preview.html', styles=styles)
 
 @app.route('/style_img', methods=['POST'])
 def style_img():

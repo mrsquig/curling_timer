@@ -40,18 +40,20 @@
                         <label for="bar_bg">Progress bar divider color:</label>
                     </div>
                     <div id="color_inputs">
-                        <input type="color" id="screen_bg" name="screen_bg" value={{SCREEN_BG}} />
-                        <input type="color" id="text_color" name="text_color" value={{TEXT}} />
-                        <input type="color" id="bar_fg1" name="bar_fg1" value={{BAR_FG1}} />
-                        <input type="color" id="bar_fg2" name="bar_fg2" value={{BAR_FG2}} />
-                        <input type="color" id="bar_bg" name="bar_bg" value={{BAR_BG}} />
-                        <input type="color" id="bar_divider" name="bar_divider" value={{BAR_DIVIDER}} />
+                        <input type="color" id="screen_bg" name="screen_bg" value={{styles.colors.SCREEN_BG}} />
+                        <input type="color" id="text_color" name="text_color" value={{styles.colors.TEXT}} />
+                        <input type="color" id="bar_fg1" name="bar_fg1" value={{styles.colors.BAR_FG1}} />
+                        <input type="color" id="bar_fg2" name="bar_fg2" value={{styles.colors.BAR_FG2}} />
+                        <input type="color" id="bar_bg" name="bar_bg" value={{styles.colors.BAR_BG}} />
+                        <input type="color" id="bar_divider" name="bar_divider" value={{styles.colors.BAR_DIVIDER}} />
                     </div>
                 </div>
             </div>
             <div class="card">
                 <label for="color_every_nth">Color every n-th stone:</label><br>
-                <input type="text" id="color_every_nth" name="color_every_nth" value="2" required><br>
+                <input type="text" id="color_every_nth" name="color_every_nth" value="{{styles.parameters.color_every_nth}}" required><br>
+                <label for="divider_relative_height">Divider height:</label><br>
+                <input type="text" id="divider_relative_height" name="divider_relative_height" value="{{styles.parameters.divider_relative_height}}" required><br>
             </div>
             <div class="card">
                 <button type="button" id="preview_style_btn">Preview Styles</button>
@@ -98,6 +100,7 @@
                 "parameters":
                 {
                     'color_every_nth': parseInt(document.forms['styles_form']['color_every_nth'].value),
+                    'divider_relative_height': parseFloat(document.forms['styles_form']['divider_relative_height'].value),
                 }
             };
 
