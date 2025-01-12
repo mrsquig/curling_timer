@@ -75,7 +75,7 @@ Full-screen mode can be entered at run-time using the `--full-screen` flag (alte
 
 ### Customizing the styles of the front end
 
-The colors of the front end elements can be customized by an optional style sheet file in JSON format. The style sheet is provided using the `--styles` or `-s` flag. The format of the file is an un-ordered list of key/value pairs. The value of each element is a three-element list of red, green, and blue values which define the color.
+The colors of the front end elements can be customized by an optional style sheet file in JSON format. The style sheet is provided using the `--styles` or `-s` flag. The format of the file is a nested dictionary. The first is given by the key `colors` and is an un-ordered list of key/value pairs. The value of each element is a three-element list of red, green, and blue values which define the color. The second is a set of parameters, given by a dictionary with the key `parameters`.
 
 An example is as follows,
 
@@ -88,10 +88,10 @@ An example is as follows,
     },
     "parameters":
     {
-        "color_every_nth": 2
+        "color_every_nth": 2,
+        "divider_relative_height": 5
     }
 }
-
 ```
 
 The colors should be defined using integer values of red, green, and blue. The integers must be between 0 and 255. The file can be changed while the timer is running to change the styles on-the-fly.
@@ -109,3 +109,9 @@ The following keys can be defined:
 |TEXT_END_MINUS1 | Text color used for the second to last end | (255, 204, 42) |
 |TEXT_LASTEND | Text color used for the last end | (160, 80, 40) |
 |OT | Overtime text color and progress bar foreground color | (160, 80, 40) |
+
+The following parameters can be defined:
+| Key | Description | Default value |
+|-----|-------------|---------------|
+|color_every_nth | Switch colors after N stones | 2 |
+|divider_relative_height | Thickness of divider on the progress bar. Units are thousands of the screen height. | 5 |

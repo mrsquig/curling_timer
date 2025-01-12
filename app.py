@@ -562,5 +562,5 @@ if __name__ == "__main__":
       sys.exit(1)
 
   # Start the front end
-  clock = IceClock(fullscreen=args.full_screen, styles=args.styles)
+  clock = IceClock(fullscreen=args.full_screen, styles_path=args.styles)
   clock.run()
