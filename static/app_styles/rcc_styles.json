@@ -17,6 +17,7 @@
     "parameters":
     {
         "color_every_nth": 2,
-        "divider_relative_height": 5
+        "divider_size": 5,
+        "bar_border_size": 5
     }
 }

@@ -45,6 +45,7 @@
                         <input type="color" id="bar_fg1" name="bar_fg1" value={{styles.colors.BAR_FG1}} />
                         <input type="color" id="bar_fg2" name="bar_fg2" value={{styles.colors.BAR_FG2}} />
                         <input type="color" id="bar_bg" name="bar_bg" value={{styles.colors.BAR_BG}} />
+                        <input type="color" id="bar_border" name="bar_border" value={{styles.colors.BAR_BORDER}} />
                         <input type="color" id="bar_divider" name="bar_divider" value={{styles.colors.BAR_DIVIDER}} />
                     </div>
                 </div>
@@ -52,8 +53,10 @@
             <div class="card">
                 <label for="color_every_nth">Color every n-th stone:</label><br>
                 <input type="text" id="color_every_nth" name="color_every_nth" value="{{styles.parameters.color_every_nth}}" required><br>
-                <label for="divider_relative_height">Divider height:</label><br>
-                <input type="text" id="divider_relative_height" name="divider_relative_height" value="{{styles.parameters.divider_relative_height}}" required><br>
+                <label for="divider_size">Progress bar divider height:</label><br>
+                <input type="text" id="divider_size" name="divider_size" value="{{styles.parameters.divider_size}}" required><br>
+                <label for="bar_border_size">Progress bar border size:</label><br>
+                <input type="text" id="bar_border_size" name="bar_border_size" value="{{styles.parameters.bar_border_size}}" required><br>
             </div>
             <div class="card">
                 <button type="button" id="preview_style_btn">Preview Styles</button>
@@ -95,12 +98,14 @@
                     'BAR_FG1': hexToRgb(document.forms['styles_form']['bar_fg1'].value),
                     'BAR_FG2': hexToRgb(document.forms['styles_form']['bar_fg2'].value),
                     'BAR_BG': hexToRgb(document.forms['styles_form']['bar_bg'].value),
+                    'BAR_BORDER': hexToRgb(document.forms['styles_form']['bar_border'].value),
                     'BAR_DIVIDER': hexToRgb(document.forms['styles_form']['bar_divider'].value),
                 },
                 "parameters":
                 {
                     'color_every_nth': parseInt(document.forms['styles_form']['color_every_nth'].value),
-                    'divider_relative_height': parseFloat(document.forms['styles_form']['divider_relative_height'].value),
+                    'divider_size': parseFloat(document.forms['styles_form']['divider_size'].value),
+                    'bar_border_size': parseFloat(document.forms['styles_form']['bar_border_size'].value),
                 }
             };
 

@@ -8,12 +8,14 @@
         "BAR_FG1": [0, 80, 240],
         "BAR_FG2": [130, 0, 150],
         "BAR_BG": [50, 50, 50],
+        "BAR_BORDER": [0, 0, 0],
         "BAR_DIVIDER": [255,255,255],
         "OT": [160, 80, 40]
     },
     "parameters":
     {
         "color_every_nth": 2,
-        "divider_relative_height": 5
+        "divider_size": 5,
+        "bar_border_size": 5
     }
 }

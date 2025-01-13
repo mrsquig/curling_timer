@@ -70,6 +70,7 @@ def color_factory(colors=None):
     BAR_FG1 = colors["BAR_FG1"] if "BAR_FG1" in colors else default_styles["colors"]["BAR_FG1"]
     BAR_FG2 = colors["BAR_FG2"] if "BAR_FG2" in colors else default_styles["colors"]["BAR_FG2"]
     BAR_BG = colors["BAR_BG"] if "BAR_BG" in colors else default_styles["colors"]["BAR_BG"]
+    BAR_BORDER = colors["BAR_BORDER"] if "BAR_BORDER" in colors else default_styles["colors"]["BAR_BORDER"]
     BAR_DIVIDER = colors["BAR_DIVIDER"] if "BAR_DIVIDER" in colors else default_styles["colors"]["BAR_DIVIDER"]
     OT = colors["OT"] if "OT" in colors else default_styles["colors"]["OT"]
     
@@ -297,10 +298,17 @@ class IceClock:
     self.bar_x_offset = 13*self.width // 32
     bar_x = ((self.width - self.bar_width) // 2 - self.bar_x_offset,
              (self.width - self.bar_width) // 2 + self.bar_x_offset)
-    self.bar_rects = [pygame.Rect(x, (self.height - self.bar_height)//2, 
-                                self.bar_width, self.bar_height) for x in bar_x]
 
-    for rect in self.bar_rects:
+    # Draw the border first, then the background 
+    bar_bg_rects = [pygame.Rect(x, (self.height - self.bar_height)//2,
+                      self.bar_width, self.bar_height) for x in bar_x]
+    border = int(self.styles["parameters"]["bar_border_size"]/1000 * self.height)
+    bar_borders = [pygame.Rect(bg.x-border, bg.y-border,
+                                bg.width + 2*border, bg.height + 2*border) for bg in bar_bg_rects]
+    for rect in bar_borders:
+      pygame.draw.rect(self.screen, Color.BAR_BORDER.value, rect, border_radius=self.height // 50)
+    
+    for rect in bar_bg_rects:
       pygame.draw.rect(self.screen, Color.BAR_BG.value, rect, border_radius=self.height // 50)
 
     # Set the height of the progress bar
@@ -319,7 +327,7 @@ class IceClock:
     color1 = Color.BAR_FG1.value if not self.jestermode else (255, 0, 0)
     color2 = Color.BAR_FG2.value if not self.jestermode else (0, 255, 0)
 
-    for rect in self.bar_rects:
+    for rect in bar_bg_rects:
       for i in range(stones_per_end):
         section_rect = pygame.Rect(rect.x, rect.y + self.bar_height - (i + 1) * section_height,
                                     self.bar_width, section_height)
@@ -332,7 +340,7 @@ class IceClock:
 
         # Add dividers to progress bars for each stone
         if i:
-          divider_height = int(self.styles["parameters"]["divider_relative_height"]/1000 * self.height)
+          divider_height = int(self.styles["parameters"]["divider_size"]/1000 * self.height)
           stone_div = pygame.Rect(rect.x, 
                                   rect.y + self.bar_height - (i) * section_height - divider_height//2,
                                   self.bar_width,

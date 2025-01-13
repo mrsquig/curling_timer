@@ -104,6 +104,7 @@ The following keys can be defined:
 |BAR_FG1 | Progress bar foreground color #1 | (40, 80, 160) |
 |BAR_FG2 | Progress bar foreground color #2 | (126, 104, 130) |
 |BAR_BG | Progress bar background color| (50, 50, 50) |
+|BAR_BORDER | Progress bar border color | (0, 0, 0) |
 |BAR_DIVIDER| Color of the line between sections of the progress bar | (255,255,255) |
 |TEXT | Main text color | (255, 255, 255)   |
 |TEXT_END_MINUS1 | Text color used for the second to last end | (255, 204, 42) |
@@ -114,4 +115,5 @@ The following parameters can be defined:
 | Key | Description | Default value |
 |-----|-------------|---------------|
 |color_every_nth | Switch colors after N stones | 2 |
-|divider_relative_height | Thickness of divider on the progress bar. Units are thousands of the screen height. | 5 |
+|divider_size | Thickness of divider on the progress bar. Units are thousands of the screen height. | 5 |
+|bar_border_size | Thickness of progress bar border. Units are thousands of the screen height. | 5 |
