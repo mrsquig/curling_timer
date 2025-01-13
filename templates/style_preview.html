@@ -7,22 +7,21 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
     <title>Curling timer</title>
     <style>
+        .form-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .form-group label {
+            flex: 0 0 400px; /* Fixed width for labels */
+        }
+        .form-group input {
+            flex: 1;
+        }
         #color_picker {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-
-        #color_labels {
-            display: flex;
             flex-direction: column;
-            justify-content: space-between;
-        }
-
-        #color_inputs {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            gap: 1rem;
         }
     </style>
 </head>
@@ -31,21 +30,32 @@
         <form name="styles_form" method="POST">
             <div class="card">
                 <div id="color_picker">
-                    <div id="color_labels">
+                    <div class="form-group">
                         <label for="screen_bg">Screen background:</label>
-                        <label for="text_color">Main text color:</label>
-                        <label for="bar_fg">Progress bar foreground first color:</label>
-                        <label for="bar_fg">Progress bar foreground second color:</label>
-                        <label for="bar_bg">Progress bar background color:</label>
-                        <label for="bar_bg">Progress bar divider color:</label>
-                    </div>
-                    <div id="color_inputs">
                         <input type="color" id="screen_bg" name="screen_bg" value={{styles.colors.SCREEN_BG}} />
+                    </div>
+                    <div class="form-group">
+                        <label for="text_color">Main text color:</label>
                         <input type="color" id="text_color" name="text_color" value={{styles.colors.TEXT}} />
-                        <input type="color" id="bar_fg1" name="bar_fg1" value={{styles.colors.BAR_FG1}} />
+                    </div>
+                    <div class="form-group">
+                        <label for="bar_fg">Progress bar foreground first color:</label>
+                        <input type="color" id="bar_fg1" name="bar_fg1" value={{styles.colors.BAR_FG1}} />                        
+                    </div>
+                    <div class="form-group">
+                        <label for="bar_fg">Progress bar foreground second color:</label>
                         <input type="color" id="bar_fg2" name="bar_fg2" value={{styles.colors.BAR_FG2}} />
+                    </div>
+                    <div class="form-group">
+                        <label for="bar_bg">Progress bar background color:</label>
                         <input type="color" id="bar_bg" name="bar_bg" value={{styles.colors.BAR_BG}} />
+                    </div>
+                    <div class="form-group">
+                        <label for="bar_border">Progress bar border color:</label>
                         <input type="color" id="bar_border" name="bar_border" value={{styles.colors.BAR_BORDER}} />
+                    </div>
+                    <div class="form-group">
+                        <label for="bar_bg">Progress bar divider color:</label>
                         <input type="color" id="bar_divider" name="bar_divider" value={{styles.colors.BAR_DIVIDER}} />
                     </div>
                 </div>
