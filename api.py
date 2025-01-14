@@ -91,9 +91,9 @@ def get_style_image(end_num, styles):
   img_io = io.BytesIO()
   clock = app.IceClock(headless=True, styles=styles)
   clock._server_config = {k: v.value for k,v in app_config.items()}
-  total_time = app_config["time_per_end"].value * (end_num - 1) + 0.75 * app_config["time_per_end"].value
-  elapsed = 0.75 * app_config["time_per_end"].value
-
+  total_time = app_config["time_per_end"].value * app_config["num_ends"].value
+  elapsed = app_config["time_per_end"].value * (end_num - 1) + 0.25 * app_config["time_per_end"].value
+  
   clock._hours = int((total_time-elapsed) // 3600)
   clock._minutes = int(((total_time-elapsed) // 60) % 60)
   clock._seconds = int((total_time-elapsed) % 60)
