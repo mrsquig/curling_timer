@@ -21,6 +21,26 @@
                 </form>
             </div>
             <div class="card">
+                <form name="timerAdjustments" method="POST">
+                    <h3>Timer Adjustments</h3>
+                    <br />             
+                    
+                    <label for="add_minutes">More Time</label>
+                    <input type="radio" id="add_minutes" name="adjust_minutes_dir" value="add" checked="checked"/>
+                    <label for="subtract_minutes">Less Time</label>
+                    <input type="radio" id="subtract_minutes" name="adjust_minutes_dir" value="subtract" />
+                    
+                    <br />
+                    
+                    <label for="adjust_minutes">Minutes:</label>
+                    <input id="adjust_minutes" name="adjust_minutes" type="number" step="1" value="0" min="0" max="120" style="width: 75px;">
+
+                    <br />
+                    <button type="submit" name="AdjustTimer">Adjust Timer</button>
+                </form>
+                
+            </div>
+            <div class="card">
                 <h3>Style configuration</h3>
                 <p>Click <a href="{{url_for('style_preview')}}">here</a> for creating styles for the front end.</p>
                 <br/>        
