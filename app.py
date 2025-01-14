@@ -505,7 +505,6 @@ class IceClock:
 
     pygame.image.save(self.screen, output, "PNG")
     output.seek(0)
-    pygame.quit()
 
   def run(self):
     # Main loop

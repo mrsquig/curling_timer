@@ -86,28 +86,49 @@ def style_preview():
 
   return render_template('style_preview.html', styles=styles)
 
-@app.route('/style_img', methods=['POST'])
-def style_img():
+def get_style_image(end_num, styles):
   import app
-  
-  styles = request.get_json()
-  styles["colors"] = {k: tuple(v) for k,v in styles["colors"].items()}
-  
   img_io = io.BytesIO()
   clock = app.IceClock(headless=True, styles=styles)
   clock._server_config = {k: v.value for k,v in app_config.items()}
-  total_time = app_config["time_per_end"].value * app_config["num_ends"].value
+  total_time = app_config["time_per_end"].value * (end_num - 1) + 0.75 * app_config["time_per_end"].value
   elapsed = 0.75 * app_config["time_per_end"].value
 
   clock._hours = int((total_time-elapsed) // 3600)
   clock._minutes = int(((total_time-elapsed) // 60) % 60)
   clock._seconds = int((total_time-elapsed) % 60)
-  clock._end_number = 1
+  clock._end_number = end_num
   clock._end_percentage = 0.25
   clock._is_overtime = False
   clock.render_to_image(img_io)
   
   img_io.seek(0)
+  return img_io
+
+@app.route('/style_img', methods=['POST'])
+def style_img():  
+  styles = request.get_json()
+  styles["colors"] = {k: tuple(v) for k,v in styles["colors"].items()}
+  end_num = 1
+  img_io = get_style_image(end_num, styles)
+
+  return send_file(img_io, mimetype='image/png')
+
+@app.route('/style_img_second_to_last_end', methods=['POST'])
+def style_img_second_to_last_end():  
+  styles = request.get_json()
+  styles["colors"] = {k: tuple(v) for k,v in styles["colors"].items()}
+  end_num = app_config["num_ends"].value - 1
+  img_io = get_style_image(end_num, styles)
+
+  return send_file(img_io, mimetype='image/png')
+
+@app.route('/style_img_last_end', methods=['POST'])
+def style_img_last_end():  
+  styles = request.get_json()
+  styles["colors"] = {k: tuple(v) for k,v in styles["colors"].items()}
+  end_num = app_config["num_ends"].value
+  img_io = get_style_image(end_num, styles)
   return send_file(img_io, mimetype='image/png')
 
 @app.route('/download_style', methods=['POST'])

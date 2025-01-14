@@ -18,7 +18,7 @@
         .form-group input {
             flex: 1;
         }
-        #color_picker {
+        .color_picker {
             display: flex;
             flex-direction: column;
             gap: 1rem;
@@ -29,7 +29,8 @@
     <h1>Curling timer style configuration</h1>
         <form name="styles_form" method="POST">
             <div class="card">
-                <div id="color_picker">
+                <h2>Text colors</h2>
+                <div class="color_picker">
                     <div class="form-group">
                         <label for="screen_bg">Screen background:</label>
                         <input type="color" id="screen_bg" name="screen_bg" value={{styles.colors.SCREEN_BG}} />
@@ -38,6 +39,19 @@
                         <label for="text_color">Main text color:</label>
                         <input type="color" id="text_color" name="text_color" value={{styles.colors.TEXT}} />
                     </div>
+                    <div class="form-group">
+                        <label for="text_end_minus1">Second to last end text color:</label>
+                        <input type="color" id="text_end_minus1" name="text_end_minus1" value={{styles.colors.TEXT_END_MINUS1}} />
+                    </div>
+                    <div class="form-group">
+                        <label for="text_lastend">Last end text color:</label>
+                        <input type="color" id="text_lastend" name="text_lastend" value={{styles.colors.TEXT_LASTEND}} />
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Progress bar colors</h2>
+                <div class="color_picker">
                     <div class="form-group">
                         <label for="bar_fg">Progress bar foreground first color:</label>
                         <input type="color" id="bar_fg1" name="bar_fg1" value={{styles.colors.BAR_FG1}} />                        
@@ -61,6 +75,7 @@
                 </div>
             </div>
             <div class="card">
+                <h2>Parameters</h2>
                 <label for="color_every_nth">Color every n-th stone:</label><br>
                 <input type="text" id="color_every_nth" name="color_every_nth" value="{{styles.parameters.color_every_nth}}" required><br>
                 <label for="divider_size">Progress bar divider height:</label><br>
@@ -76,7 +91,14 @@
     </div>
  
     <div class="card">
-        <img id="generated_image" width="100%">
+        <h3 id="normal_header"></h3>
+        <img id="generated_image" width="100%"> <br />
+        
+        <h3 id="second_to_last_header"></h3>
+        <img id="generated_image_second_to_last_end" width="100%"><br />
+
+        <h3 id="last_end_header"></h3>
+        <img id="generated_image_last_end" width="100%">
     </div>
 
     <script>
@@ -99,12 +121,14 @@
             return [r, g, b];  // Return as an array of integers
         }
 
-        function get_form_data() {            
+        function get_form_data() {
             inputData = {
                 "colors":
                 {
                     'SCREEN_BG': hexToRgb(document.forms['styles_form']['screen_bg'].value),
                     'TEXT': hexToRgb(document.forms['styles_form']['text_color'].value),
+                    'TEXT_END_MINUS1': hexToRgb(document.forms['styles_form']['text_end_minus1'].value),
+                    'TEXT_LASTEND': hexToRgb(document.forms['styles_form']['text_lastend'].value),
                     'BAR_FG1': hexToRgb(document.forms['styles_form']['bar_fg1'].value),
                     'BAR_FG2': hexToRgb(document.forms['styles_form']['bar_fg2'].value),
                     'BAR_BG': hexToRgb(document.forms['styles_form']['bar_bg'].value),
@@ -128,7 +152,8 @@
             // Collect form data
             inputData = get_form_data();
 
-            // Send input data as JSON to the server
+            // Send input data as JSON to the server to get the image for
+            // the normal style
             fetch('/style_img', {
                 method: 'POST',
                 headers: {
@@ -145,11 +170,49 @@
                 const img = document.getElementById('generated_image');
                 img.src = imageUrl;
                 img.style.display = 'block';
+
+                // Set the header to have text now that there is an image
+                document.getElementById("normal_header").innerText = "Normal style";
             })
             .catch(error => console.error('Error:', error));
-        });
 
-        
+            // Get the image for the second to last end
+            fetch('/style_img_second_to_last_end', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(inputData),
+            })
+            .then(response => response.blob())
+            .then(imageBlob => {
+                const imageUrl = URL.createObjectURL(imageBlob);
+                const img = document.getElementById('generated_image_second_to_last_end');
+                img.src = imageUrl;
+                img.style.display = 'block';
+                document.getElementById("second_to_last_header").innerText = "Second to last end";
+            })
+            .catch(error => console.error('Error:', error));
+
+            // Get the image for the last end
+            fetch('/style_img_last_end', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(inputData),
+            })
+            .then(response => response.blob())
+            .then(imageBlob => {
+                const imageUrl = URL.createObjectURL(imageBlob);
+                const img = document.getElementById('generated_image_last_end');
+                img.src = imageUrl;
+                img.style.display = 'block';
+                document.getElementById("last_end_header").innerText = "Last end";
+            })
+            .catch(error => console.error('Error:', error));
+            }
+        );
 
         document.getElementById('save_style_btn').addEventListener('click', function() {
             event.preventDefault();
