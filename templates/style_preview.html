@@ -54,7 +54,7 @@
                 <div class="color_picker">
                     <div class="form-group">
                         <label for="bar_fg">Progress bar foreground first color:</label>
-                        <input type="color" id="bar_fg1" name="bar_fg1" value={{styles.colors.BAR_FG1}} />                        
+                        <input type="color" id="bar_fg1" name="bar_fg1" value={{styles.colors.BAR_FG1}} />
                     </div>
                     <div class="form-group">
                         <label for="bar_fg">Progress bar foreground second color:</label>
@@ -86,14 +86,14 @@
             <div class="card">
                 <button type="button" id="preview_style_btn">Preview Styles</button>
                 <button type="submit" id="save_style_btn">Save Styles</button>
-            </div>            
+            </div>
         </form>
     </div>
- 
+
     <div class="card">
         <h3 id="normal_header"></h3>
         <img id="generated_image" width="100%"> <br />
-        
+
         <h3 id="second_to_last_header"></h3>
         <img id="generated_image_second_to_last_end" width="100%"><br />
 
@@ -122,38 +122,36 @@
         }
 
         function get_form_data() {
-            inputData = {
-                "colors":
-                {
-                    'SCREEN_BG': hexToRgb(document.forms['styles_form']['screen_bg'].value),
-                    'TEXT': hexToRgb(document.forms['styles_form']['text_color'].value),
-                    'TEXT_END_MINUS1': hexToRgb(document.forms['styles_form']['text_end_minus1'].value),
-                    'TEXT_LASTEND': hexToRgb(document.forms['styles_form']['text_lastend'].value),
-                    'BAR_FG1': hexToRgb(document.forms['styles_form']['bar_fg1'].value),
-                    'BAR_FG2': hexToRgb(document.forms['styles_form']['bar_fg2'].value),
-                    'BAR_BG': hexToRgb(document.forms['styles_form']['bar_bg'].value),
-                    'BAR_BORDER': hexToRgb(document.forms['styles_form']['bar_border'].value),
-                    'BAR_DIVIDER': hexToRgb(document.forms['styles_form']['bar_divider'].value),
-                },
-                "parameters":
-                {
-                    'color_every_nth': parseInt(document.forms['styles_form']['color_every_nth'].value),
-                    'divider_size': parseFloat(document.forms['styles_form']['divider_size'].value),
-                    'bar_border_size': parseFloat(document.forms['styles_form']['bar_border_size'].value),
-                }
-            };
+            inputData = {"styles":
+                        {
+                            "colors":
+                            {
+                                'SCREEN_BG': hexToRgb(document.forms['styles_form']['screen_bg'].value),
+                                'TEXT': hexToRgb(document.forms['styles_form']['text_color'].value),
+                                'TEXT_END_MINUS1': hexToRgb(document.forms['styles_form']['text_end_minus1'].value),
+                                'TEXT_LASTEND': hexToRgb(document.forms['styles_form']['text_lastend'].value),
+                                'BAR_FG1': hexToRgb(document.forms['styles_form']['bar_fg1'].value),
+                                'BAR_FG2': hexToRgb(document.forms['styles_form']['bar_fg2'].value),
+                                'BAR_BG': hexToRgb(document.forms['styles_form']['bar_bg'].value),
+                                'BAR_BORDER': hexToRgb(document.forms['styles_form']['bar_border'].value),
+                                'BAR_DIVIDER': hexToRgb(document.forms['styles_form']['bar_divider'].value),
+                            },
+                            "parameters":
+                            {
+                                'color_every_nth': parseInt(document.forms['styles_form']['color_every_nth'].value),
+                                'divider_size': parseFloat(document.forms['styles_form']['divider_size'].value),
+                                'bar_border_size': parseFloat(document.forms['styles_form']['bar_border_size'].value),
+                            }
+                        },
+                        "image_settings": {
+                            "image_type": undefined
+                        }
+        };
 
             return inputData;
         }
 
-        document.getElementById('preview_style_btn').addEventListener('click', function() {
-            event.preventDefault();
-
-            // Collect form data
-            inputData = get_form_data();
-
-            // Send input data as JSON to the server to get the image for
-            // the normal style
+        function get_style_img(inputData, img_node, header_node, header_txt) {
             fetch('/style_img', {
                 method: 'POST',
                 headers: {
@@ -167,51 +165,43 @@
                 const imageUrl = URL.createObjectURL(imageBlob);
 
                 // Show the generated image
-                const img = document.getElementById('generated_image');
-                img.src = imageUrl;
-                img.style.display = 'block';
+                img_node.src = imageUrl;
+                img_node.style.display = 'block';
 
                 // Set the header to have text now that there is an image
-                document.getElementById("normal_header").innerText = "Normal style";
+                header_node.innerText = header_txt;
             })
             .catch(error => console.error('Error:', error));
+        }
+
+        document.getElementById('preview_style_btn').addEventListener('click', function() {
+            event.preventDefault();
+
+            // Collect form data
+            inputData = get_form_data();
+            inputData["image_settings"]["image_type"] = "normal";
+
+            // Send input data as JSON to the server to get the image for
+            // the normal style
+            get_style_img(inputData,
+                          document.getElementById('generated_image'),
+                          document.getElementById("normal_header"),
+                          "Normal style");
 
             // Get the image for the second to last end
-            fetch('/style_img_second_to_last_end', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(inputData),
-            })
-            .then(response => response.blob())
-            .then(imageBlob => {
-                const imageUrl = URL.createObjectURL(imageBlob);
-                const img = document.getElementById('generated_image_second_to_last_end');
-                img.src = imageUrl;
-                img.style.display = 'block';
-                document.getElementById("second_to_last_header").innerText = "Second to last end";
-            })
-            .catch(error => console.error('Error:', error));
+            inputData["image_settings"]["image_type"] = "second_to_last";
+            get_style_img(inputData,
+                          document.getElementById('generated_image_second_to_last_end'),
+                          document.getElementById("second_to_last_header"),
+                          "Second to last end");
 
             // Get the image for the last end
-            fetch('/style_img_last_end', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(inputData),
-            })
-            .then(response => response.blob())
-            .then(imageBlob => {
-                const imageUrl = URL.createObjectURL(imageBlob);
-                const img = document.getElementById('generated_image_last_end');
-                img.src = imageUrl;
-                img.style.display = 'block';
-                document.getElementById("last_end_header").innerText = "Last end";
-            })
-            .catch(error => console.error('Error:', error));
-            }
+            inputData["image_settings"]["image_type"] = "last";
+            get_style_img(inputData,
+                          document.getElementById('generated_image_last_end'),
+                          document.getElementById("last_end_header"),
+                          "Last end");
+        }
         );
 
         document.getElementById('save_style_btn').addEventListener('click', function() {
