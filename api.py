@@ -54,6 +54,10 @@ def index():
     elif "LoadProfile" in request.form:
       profile_name = request.form.get('profile_name')
       update_config_with_profile(profile_name)
+    elif "AdjustTimer" in request.form:
+      adjustDir = request.form.get('adjust_minutes_dir')
+      adjustVal = request.form.get('adjust_minutes')
+      adjust_timer(adjustDir, adjustVal)
     else:
       app_config["num_ends"].value = request.form.get('num_ends')
       app_config["time_per_end"].value = request.form.get('time_per_end')
@@ -313,6 +317,37 @@ def update_config_with_profile(profile_name):
     if key == "description":
       continue
     app_config[key].value = PROFILES[profile_name][key]
+
+@app.route('/adjust_timer', methods=['POST'])
+def adjust_timer(direction, minutes):
+  if not minutes:
+    return
+
+  minutes = int(minutes)
+
+  if (direction != "add" and direction != "subtract") or minutes <= 0:
+    return
+  
+  if direction == "add":
+    # We "add" minutes to the start time to simulate the game starting later, meaning more time left
+    app_config["start_timestamp"].value += minutes * 60
+
+    # Don't allow the start time to be in the future
+    if app_config["start_timestamp"].value > timestamp():
+      app_config["start_timestamp"].value = timestamp()
+  else:
+    # We "subtract" minutes from the start time to simulate the game starting earlier, meaning less time left
+    app_config["start_timestamp"].value -= minutes * 60
+    response, status = get_times()
+    times = response.json.get("times")
+    uptime = times["uptime"]
+    game_time = times["total_time"] - uptime if app_config["count_direction"].value < 0 else uptime
+
+    # If the adjusted time makes the game longer than it can be, adjust it back
+    if game_time > app_config["time_per_end"].value * app_config["num_ends"].value:
+      app_config["start_timestamp"].value += minutes * 60
+
+  return jsonify({"start_timestamp": app_config["start_timestamp"].value}), 200
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
