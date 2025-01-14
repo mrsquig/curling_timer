@@ -318,7 +318,6 @@ def update_config_with_profile(profile_name):
       continue
     app_config[key].value = PROFILES[profile_name][key]
 
-@app.route('/adjust_timer', methods=['POST'])
 def adjust_timer(direction, minutes):
   if not minutes:
     return
