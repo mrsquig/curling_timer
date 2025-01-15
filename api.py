@@ -35,7 +35,8 @@ app_config = {
     "allow_overtime": ConfigValue(False, bool_type),
     "is_timer_running": ConfigValue(False, bool_type),
     "stones_per_end": ConfigValue(8, int),
-    "is_game_complete": ConfigValue(False, bool_type)
+    "is_game_complete": ConfigValue(False, bool_type),
+    "count_in": ConfigValue(0, int)
 }
 
 @app.route('/', methods=['GET','POST'])
@@ -206,12 +207,18 @@ def reset_timer():
   #always stop timer when reseting time
   app_config["is_timer_running"].value = False
 
+  app_config["count_in"].value = 0
+
   return jsonify({"start_timestamp": app_config["start_timestamp"].value}), 200
 
 @app.route('/game_times', methods=['GET'])
 def get_times():
+  global app_config
   # Get how long the timer has been running
-  if app_config["is_timer_running"].value == True:
+  if app_config["is_timer_running"].value and app_config["count_in"].value > 0:
+    app_config["count_in"].value -= 1
+    uptime = 0
+  elif app_config["is_timer_running"].value == True:
     current_time = timestamp()
     uptime = int(current_time) - app_config["start_timestamp"].value
   else:
@@ -248,9 +255,14 @@ def get_times():
     game_time = game_time*-1
 
   # Divide the time into hours, minutes, seconds
-  times["hours"] = game_time // 3600
-  times["minutes"] = (game_time // 60) % 60
-  times["seconds"] = game_time % 60
+  if not app_config["count_in"].value:
+    times["hours"] = game_time // 3600
+    times["minutes"] = (game_time // 60) % 60
+    times["seconds"] = game_time % 60
+  else:
+    times["hours"] = app_config["count_in"].value // 3600
+    times["minutes"] = (app_config["count_in"].value // 60) % 60
+    times["seconds"] = app_config["count_in"].value % 60
 
   # Include the server config in the returned value for convenience and to limit
   # network traffic required to update the front end
