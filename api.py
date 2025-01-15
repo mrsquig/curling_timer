@@ -39,13 +39,13 @@ app_config = {
 }
 
 @app.route('/', methods=['GET','POST'])
-def index(): 
+def index():
   if request.method == 'POST':
     if "Start" in request.form:
       # If previous game is done (timer done counting and overtime not allowed), then reset timer and start again
       if app_config["is_game_complete"].value:
         reset_timer()
-      
+
       start_timer()
     elif "Stop" in request.form:
       stop_timer()
@@ -86,28 +86,42 @@ def style_preview():
 
   return render_template('style_preview.html', styles=styles)
 
-@app.route('/style_img', methods=['POST'])
-def style_img():
+def get_style_image(end_num, styles):
   import app
-  
-  styles = request.get_json()
-  styles["colors"] = {k: tuple(v) for k,v in styles["colors"].items()}
-  
   img_io = io.BytesIO()
   clock = app.IceClock(headless=True, styles=styles)
   clock._server_config = {k: v.value for k,v in app_config.items()}
   total_time = app_config["time_per_end"].value * app_config["num_ends"].value
-  elapsed = 0.75 * app_config["time_per_end"].value
+  elapsed = app_config["time_per_end"].value * (end_num - 1) + 0.25 * app_config["time_per_end"].value
 
   clock._hours = int((total_time-elapsed) // 3600)
   clock._minutes = int(((total_time-elapsed) // 60) % 60)
   clock._seconds = int((total_time-elapsed) % 60)
-  clock._end_number = 1
+  clock._end_number = end_num
   clock._end_percentage = 0.25
   clock._is_overtime = False
   clock.render_to_image(img_io)
-  
+
   img_io.seek(0)
+  return img_io
+
+@app.route('/style_img', methods=['POST'])
+def style_img():
+  input_data = request.get_json()
+  styles=input_data["styles"]
+
+  styles["colors"] = {k: tuple(v) for k,v in styles["colors"].items()}
+  if input_data["image_settings"]["image_type"] == "normal":
+    end_num = 1
+  elif input_data["image_settings"]["image_type"] == "second_to_last":
+    end_num = app_config["num_ends"].value - 1
+  elif input_data["image_settings"]["image_type"] == "last":
+    end_num = app_config["num_ends"].value
+  else:
+    return jsonify({"error": "Invalid image type provided"}), 400
+
+  img_io = get_style_image(end_num, styles)
+
   return send_file(img_io, mimetype='image/png')
 
 @app.route('/download_style', methods=['POST'])
@@ -146,7 +160,7 @@ def update_config():
 
   if key not in app_config:
     return jsonify({"error": "Key not found"}), 500
-    
+
   new_value = request.args.get("value")
   if new_value:
     app_config[key].value = new_value
@@ -216,10 +230,10 @@ def get_times():
   # hours, minutes, and seconds depending on if we're counting down or up
   times["total_time"] = app_config["time_per_end"].value * app_config["num_ends"].value
   game_time = times["total_time"] - uptime if app_config["count_direction"].value < 0 else uptime
-  
+
   # Determine if we're over time or not. If allow_overtime is false, then the over time flag will always be false
   times["is_overtime"] = uptime > times["total_time"] and app_config["allow_overtime"].value
-  
+
   # If we don't allow overtime and the timer is done, directly call the stop function so timing stops
   # and set the time to 0 or total time, so it stays that way
   if uptime >= times["total_time"] and not app_config["allow_overtime"].value:
@@ -264,7 +278,7 @@ def get_profile_description():
 
   if profile_name not in PROFILES:
     return jsonify({"error": "Profile not found"}), 400
-  
+
   return jsonify({"description": PROFILES[profile_name]["description"]}), 200
 
 @app.route('/messages', methods=['GET'])
@@ -284,11 +298,11 @@ def broadcast_message():
     if not message:
       return render_template('broadcast_message.html', error="No message provided"), 200
 
-    if app_config["is_timer_running"].value:      
+    if app_config["is_timer_running"].value:
       return render_template('broadcast_message.html', error="Cannot broadcast message while timer is running"), 200
 
     MESSAGES.append(message)
-  
+
   return render_template('broadcast_message.html'), 200
 
 @app.route('/cycle_profile', methods=['GET'])
@@ -304,7 +318,7 @@ def cycle_profile():
   if PROFILE_ID >= len(profile_names):
     PROFILE_ID = 0
 
-  update_config_with_profile(profile_names[PROFILE_ID])  
+  update_config_with_profile(profile_names[PROFILE_ID])
   MESSAGES.append("Selected profile {}".format(profile_names[PROFILE_ID]))
   PROFILE_ID += 1
   return jsonify({key: app_config[key].value for key in app_config}), 200
@@ -326,7 +340,7 @@ def adjust_timer(direction, minutes):
 
   if (direction != "add" and direction != "subtract") or minutes <= 0:
     return
-  
+
   if direction == "add":
     # We "add" minutes to the start time to simulate the game starting later, meaning more time left
     app_config["start_timestamp"].value += minutes * 60
@@ -374,5 +388,5 @@ if __name__ == '__main__':
 
   if USING_WAITRESS:
     waitress.serve(app, host='0.0.0.0', port=args.port)
-  else:  
+  else:
     app.run(port=args.port)

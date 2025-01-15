@@ -18,7 +18,7 @@
         .form-group input {
             flex: 1;
         }
-        #color_picker {
+        .color_picker {
             display: flex;
             flex-direction: column;
             gap: 1rem;
@@ -29,7 +29,8 @@
     <h1>Curling timer style configuration</h1>
         <form name="styles_form" method="POST">
             <div class="card">
-                <div id="color_picker">
+                <h2>Text colors</h2>
+                <div class="color_picker">
                     <div class="form-group">
                         <label for="screen_bg">Screen background:</label>
                         <input type="color" id="screen_bg" name="screen_bg" value={{styles.colors.SCREEN_BG}} />
@@ -39,8 +40,21 @@
                         <input type="color" id="text_color" name="text_color" value={{styles.colors.TEXT}} />
                     </div>
                     <div class="form-group">
+                        <label for="text_end_minus1">Second to last end text color:</label>
+                        <input type="color" id="text_end_minus1" name="text_end_minus1" value={{styles.colors.TEXT_END_MINUS1}} />
+                    </div>
+                    <div class="form-group">
+                        <label for="text_lastend">Last end text color:</label>
+                        <input type="color" id="text_lastend" name="text_lastend" value={{styles.colors.TEXT_LASTEND}} />
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Progress bar colors</h2>
+                <div class="color_picker">
+                    <div class="form-group">
                         <label for="bar_fg">Progress bar foreground first color:</label>
-                        <input type="color" id="bar_fg1" name="bar_fg1" value={{styles.colors.BAR_FG1}} />                        
+                        <input type="color" id="bar_fg1" name="bar_fg1" value={{styles.colors.BAR_FG1}} />
                     </div>
                     <div class="form-group">
                         <label for="bar_fg">Progress bar foreground second color:</label>
@@ -61,6 +75,7 @@
                 </div>
             </div>
             <div class="card">
+                <h2>Parameters</h2>
                 <label for="color_every_nth">Color every n-th stone:</label><br>
                 <input type="text" id="color_every_nth" name="color_every_nth" value="{{styles.parameters.color_every_nth}}" required><br>
                 <label for="divider_size">Progress bar divider height:</label><br>
@@ -71,12 +86,19 @@
             <div class="card">
                 <button type="button" id="preview_style_btn">Preview Styles</button>
                 <button type="submit" id="save_style_btn">Save Styles</button>
-            </div>            
+            </div>
         </form>
     </div>
- 
+
     <div class="card">
-        <img id="generated_image" width="100%">
+        <h3 id="normal_header"></h3>
+        <img id="generated_image" width="100%"> <br />
+
+        <h3 id="second_to_last_header"></h3>
+        <img id="generated_image_second_to_last_end" width="100%"><br />
+
+        <h3 id="last_end_header"></h3>
+        <img id="generated_image_last_end" width="100%">
     </div>
 
     <script>
@@ -99,36 +121,37 @@
             return [r, g, b];  // Return as an array of integers
         }
 
-        function get_form_data() {            
-            inputData = {
-                "colors":
-                {
-                    'SCREEN_BG': hexToRgb(document.forms['styles_form']['screen_bg'].value),
-                    'TEXT': hexToRgb(document.forms['styles_form']['text_color'].value),
-                    'BAR_FG1': hexToRgb(document.forms['styles_form']['bar_fg1'].value),
-                    'BAR_FG2': hexToRgb(document.forms['styles_form']['bar_fg2'].value),
-                    'BAR_BG': hexToRgb(document.forms['styles_form']['bar_bg'].value),
-                    'BAR_BORDER': hexToRgb(document.forms['styles_form']['bar_border'].value),
-                    'BAR_DIVIDER': hexToRgb(document.forms['styles_form']['bar_divider'].value),
-                },
-                "parameters":
-                {
-                    'color_every_nth': parseInt(document.forms['styles_form']['color_every_nth'].value),
-                    'divider_size': parseFloat(document.forms['styles_form']['divider_size'].value),
-                    'bar_border_size': parseFloat(document.forms['styles_form']['bar_border_size'].value),
-                }
-            };
+        function get_form_data() {
+            inputData = {"styles":
+                        {
+                            "colors":
+                            {
+                                'SCREEN_BG': hexToRgb(document.forms['styles_form']['screen_bg'].value),
+                                'TEXT': hexToRgb(document.forms['styles_form']['text_color'].value),
+                                'TEXT_END_MINUS1': hexToRgb(document.forms['styles_form']['text_end_minus1'].value),
+                                'TEXT_LASTEND': hexToRgb(document.forms['styles_form']['text_lastend'].value),
+                                'BAR_FG1': hexToRgb(document.forms['styles_form']['bar_fg1'].value),
+                                'BAR_FG2': hexToRgb(document.forms['styles_form']['bar_fg2'].value),
+                                'BAR_BG': hexToRgb(document.forms['styles_form']['bar_bg'].value),
+                                'BAR_BORDER': hexToRgb(document.forms['styles_form']['bar_border'].value),
+                                'BAR_DIVIDER': hexToRgb(document.forms['styles_form']['bar_divider'].value),
+                            },
+                            "parameters":
+                            {
+                                'color_every_nth': parseInt(document.forms['styles_form']['color_every_nth'].value),
+                                'divider_size': parseFloat(document.forms['styles_form']['divider_size'].value),
+                                'bar_border_size': parseFloat(document.forms['styles_form']['bar_border_size'].value),
+                            }
+                        },
+                        "image_settings": {
+                            "image_type": undefined
+                        }
+        };
 
             return inputData;
         }
 
-        document.getElementById('preview_style_btn').addEventListener('click', function() {
-            event.preventDefault();
-
-            // Collect form data
-            inputData = get_form_data();
-
-            // Send input data as JSON to the server
+        function get_style_img(inputData, img_node, header_node, header_txt) {
             fetch('/style_img', {
                 method: 'POST',
                 headers: {
@@ -142,14 +165,44 @@
                 const imageUrl = URL.createObjectURL(imageBlob);
 
                 // Show the generated image
-                const img = document.getElementById('generated_image');
-                img.src = imageUrl;
-                img.style.display = 'block';
+                img_node.src = imageUrl;
+                img_node.style.display = 'block';
+
+                // Set the header to have text now that there is an image
+                header_node.innerText = header_txt;
             })
             .catch(error => console.error('Error:', error));
-        });
+        }
 
-        
+        document.getElementById('preview_style_btn').addEventListener('click', function() {
+            event.preventDefault();
+
+            // Collect form data
+            inputData = get_form_data();
+            inputData["image_settings"]["image_type"] = "normal";
+
+            // Send input data as JSON to the server to get the image for
+            // the normal style
+            get_style_img(inputData,
+                          document.getElementById('generated_image'),
+                          document.getElementById("normal_header"),
+                          "Normal style");
+
+            // Get the image for the second to last end
+            inputData["image_settings"]["image_type"] = "second_to_last";
+            get_style_img(inputData,
+                          document.getElementById('generated_image_second_to_last_end'),
+                          document.getElementById("second_to_last_header"),
+                          "Second to last end");
+
+            // Get the image for the last end
+            inputData["image_settings"]["image_type"] = "last";
+            get_style_img(inputData,
+                          document.getElementById('generated_image_last_end'),
+                          document.getElementById("last_end_header"),
+                          "Last end");
+        }
+        );
 
         document.getElementById('save_style_btn').addEventListener('click', function() {
             event.preventDefault();
