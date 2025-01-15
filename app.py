@@ -73,7 +73,7 @@ def color_factory(colors=None):
     BAR_BORDER = colors["BAR_BORDER"] if "BAR_BORDER" in colors else default_styles["colors"]["BAR_BORDER"]
     BAR_DIVIDER = colors["BAR_DIVIDER"] if "BAR_DIVIDER" in colors else default_styles["colors"]["BAR_DIVIDER"]
     OT = colors["OT"] if "OT" in colors else default_styles["colors"]["OT"]
-    
+
   return Color
 
 @functools.cache
@@ -109,12 +109,12 @@ class IceClock:
     self.update_styles()
 
     # Setup the dimensions for window mode and full-screen mode
-    # We need to do this before setting up the window so that we 
+    # We need to do this before setting up the window so that we
     # can get the accurate screen resolution.
     info = pygame.display.Info()
     self.headless = headless
     self.fs_width = info.current_w
-    self.fs_height = info.current_h    
+    self.fs_height = info.current_h
     self.window_width = width
     self.window_height = height
 
@@ -156,6 +156,7 @@ class IceClock:
     self.fonts["end"] = pygame.font.Font(jetbrains,  self.height // 2)
     self.fonts["end_progress_label"] = pygame.font.Font(jetbrains, self.height // 32)
     self.fonts["messages"] = pygame.font.Font(jetbrains, 3*self.height // 32)
+    self.fonts["count_in"] = pygame.font.Font(jetbrains, 4*self.height // 16)
 
   def update_styles(self):
     global Color
@@ -211,7 +212,7 @@ class IceClock:
 
     times = response.json().get("times")
     self._server_config = response.json().get("config")
-    
+
     self._hours = times["hours"]
     self._minutes = times["minutes"]
     self._seconds = times["seconds"]
@@ -239,7 +240,7 @@ class IceClock:
     color = self.get_text_color()
 
     text = self.fonts["timer"].render("{:02d}:{:02d}:{:02d}".format(self._hours, self._minutes, self._seconds), True, color)
-    text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))                              
+    text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))
     self.screen.blit(text, text_rect)
 
   def render_detail_text(self):
@@ -252,10 +253,16 @@ class IceClock:
       text = self.fonts["last_end"].render("OVERTIME", True, color)
     else:
       text = self.fonts["last_end"].render("", True, color)
-  
+
     text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 6.5*self.height // 16))
     self.screen.blit(text, text_rect)
-  
+
+  def render_count_in_warning(self):
+    color = self.get_text_color()
+    text = self.fonts["count_in"].render("Starting in", True, color)
+    text_rect = text.get_rect(center=(self.center["x"], self.center["y"] - 3*self.height // 16))
+    self.screen.blit(text, text_rect)
+
   def render_end_number(self):
     color = self.get_text_color()
 
@@ -266,7 +273,7 @@ class IceClock:
       if self.jestermode:
         text = pygame.transform.flip(text, False, True)
       self.screen.blit(text, text_rect)
-      
+
       text = self.fonts["timer"].render("/{:d}".format(self._server_config["num_ends"]), True, color)
       text_rect = text.get_rect(center=(self.center["x"] + 3*self.width // 32, self.center["y"] - 3*self.height // 16))
       if self.jestermode:
@@ -277,14 +284,14 @@ class IceClock:
       if self.jestermode:
         text = pygame.transform.flip(text, False, True)
       text_rect = text.get_rect(center=(self.center["x"], self.center["y"] - 3*self.height // 16))
-      
+
       # Blink the "OT" text on for one second and off for one second when over time
       if not self._is_overtime or self._seconds % 2:
         if self.jestermode:
           text = pygame.transform.flip(text, False, True)
         self.screen.blit(text, text_rect)
 
-  def render_end_progress_bar(self):    
+  def render_end_progress_bar(self):
     stones_per_end = self._server_config["stones_per_end"]
 
     # Set up progress bar(s)
@@ -294,12 +301,12 @@ class IceClock:
     # Calculate the height for each stone section then update the progress bar height
     section_height = self.bar_height // stones_per_end
     self.bar_height = section_height * stones_per_end
-    
+
     self.bar_x_offset = 13*self.width // 32
     bar_x = ((self.width - self.bar_width) // 2 - self.bar_x_offset,
              (self.width - self.bar_width) // 2 + self.bar_x_offset)
 
-    # Draw the border first, then the background 
+    # Draw the border first, then the background
     bar_bg_rects = [pygame.Rect(x, (self.height - self.bar_height)//2,
                       self.bar_width, self.bar_height) for x in bar_x]
     border = int(self.styles["parameters"]["bar_border_size"]/1000 * self.height)
@@ -307,7 +314,7 @@ class IceClock:
                                 bg.width + 2*border, bg.height + 2*border) for bg in bar_bg_rects]
     for rect in bar_borders:
       pygame.draw.rect(self.screen, Color.BAR_BORDER.value, rect, border_radius=self.height // 50)
-    
+
     for rect in bar_bg_rects:
       pygame.draw.rect(self.screen, Color.BAR_BG.value, rect, border_radius=self.height // 50)
 
@@ -333,7 +340,7 @@ class IceClock:
                                     self.bar_width, section_height)
         # Alternate colors for each stone section
         color_mod = 2*self.styles["parameters"]["color_every_nth"]
-        color = color1 if i % color_mod < int(color_mod/2) else color2        
+        color = color1 if i % color_mod < int(color_mod/2) else color2
         border_radius = self.height // 100 if i == 0 or i == stones_per_end - 1 else 0
         if (i + 1) * section_height <= filled_height:
           pygame.draw.rect(self.screen, color, section_rect, border_radius=border_radius)
@@ -341,7 +348,7 @@ class IceClock:
         # Add dividers to progress bars for each stone
         if i:
           divider_height = int(self.styles["parameters"]["divider_size"]/1000 * self.height)
-          stone_div = pygame.Rect(rect.x, 
+          stone_div = pygame.Rect(rect.x,
                                   rect.y + self.bar_height - (i) * section_height - divider_height//2,
                                   self.bar_width,
                                   divider_height)
@@ -359,13 +366,13 @@ class IceClock:
     for sgn in side_signs:
       x_offset = (self.center["x"] + sgn*self.bar_x_offset)
 
-      for txt, y_offset in zip(text, y_offsets):      
+      for txt, y_offset in zip(text, y_offsets):
         text_rect = txt.get_rect(center=(x_offset, y_offset))
         self.screen.blit(txt, text_rect)
 
   def render_messages(self):
     # Render messages from the server
-    
+
     # Get the latest message and put it in the message queue
     msg = self._messages[-1]
     chr_queue = queue.Queue()
@@ -373,7 +380,7 @@ class IceClock:
       chr_queue.put(c)
 
     # Split the message into lines
-    output_lines = []    
+    output_lines = []
     line_buf = ""
     while not chr_queue.empty():
       c = chr_queue.get()
@@ -392,13 +399,13 @@ class IceClock:
         line_buf = c
         continue
 
-      if len(line_buf) >= MESSAGE_CHR_SOFT_LIMIT and c == " ":        
+      if len(line_buf) >= MESSAGE_CHR_SOFT_LIMIT and c == " ":
         output_lines.append(line_buf)
         line_buf = ""
         continue
 
       line_buf += c
-    
+
     # Add the last line to the output. If the message was truncated, then
     # add an ellipsis to the end of the line
     if len(msg[0]) > MESSAGE_CHR_HARD_LIMIT*MESSAGE_LINE_LIMIT-3:
@@ -410,7 +417,7 @@ class IceClock:
     # Render the message to the screen
     line_offset = self.height // 8
     color = self.get_text_color()
-    for i, line in enumerate(output_lines):      
+    for i, line in enumerate(output_lines):
       text = self.fonts["messages"].render(line, True, color)
       text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16 + (i-Nlines+2)*line_offset))
       self.screen.blit(text, text_rect)
@@ -439,9 +446,10 @@ class IceClock:
     Render all UI elements to the PyGame window
     '''
 
-    self.update_styles()    
+    self.update_styles()
     self.screen.fill(Color.SCREEN_BG.value)
-    self.render_end_progress_bar()
+    if not self._server_config["count_in"]:
+      self.render_end_progress_bar()
     #self.render_end_progress_labels()
 
     # If there are messages, render them and skip the timer
@@ -450,7 +458,11 @@ class IceClock:
     else:
       self.render_timer()
     self.render_detail_text()
-    self.render_end_number()
+
+    if not self._server_config["count_in"]:
+      self.render_end_number()
+    else:
+      self.render_count_in_warning()
 
     # Update the display
     if not self.headless:
@@ -481,7 +493,7 @@ class IceClock:
       # F key -- toggle fullscreen
       logger.debug("User requested fullscreen")
       pygame.mouse.set_visible(self.fullscreen)
-      self.fullscreen = not self.fullscreen      
+      self.fullscreen = not self.fullscreen
       if self.fullscreen:
         self.width = self.fs_width
         self.height = self.fs_height
@@ -520,7 +532,7 @@ class IceClock:
         self.update_time()
 
       # Get the latest messages from the server and render all UI elements
-      self.get_messages()      
+      self.get_messages()
       self.render()
 
       # If there are messages, then update the UI more frequently. Otherwise,
@@ -535,7 +547,7 @@ class IceClock:
     pygame.quit()
     sys.exit()
 
-def check_server():  
+def check_server():
   try:
     response = requests.get('http://{:s}:{:s}/version'.format(HOST_IP, SERVER_PORT))
     return response.status_code == 200
@@ -553,8 +565,8 @@ if __name__ == "__main__":
   parser.add_argument("--styles", "-s", default=None, help="path to JSON file with color styles")
   parser.add_argument("-j", "--jester", action="store_true", help=argparse.SUPPRESS, required=False)
   args = parser.parse_args()
-  
-  # Set the variable based on the argument 
+
+  # Set the variable based on the argument
   HOST_IP = args.host
   SERVER_PORT = args.port
 
