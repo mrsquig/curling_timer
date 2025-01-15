@@ -23,27 +23,27 @@
             <div class="card">
                 <form name="timerAdjustments" method="POST">
                     <h3>Timer Adjustments</h3>
-                    <br />             
-                    
+                    <br />
+
                     <label for="add_minutes">More Time</label>
                     <input type="radio" id="add_minutes" name="adjust_minutes_dir" value="add" checked="checked"/>
                     <label for="subtract_minutes">Less Time</label>
                     <input type="radio" id="subtract_minutes" name="adjust_minutes_dir" value="subtract" />
-                    
+
                     <br />
-                    
+
                     <label for="adjust_minutes">Minutes:</label>
                     <input id="adjust_minutes" name="adjust_minutes" type="number" step="1" value="0" min="0" max="120" style="width: 75px;">
 
                     <br />
                     <button type="submit" name="AdjustTimer">Adjust Timer</button>
                 </form>
-                
+
             </div>
             <div class="card">
                 <h3>Style configuration</h3>
                 <p>Click <a href="{{url_for('style_preview')}}">here</a> for creating styles for the front end.</p>
-                <br/>        
+                <br/>
                 <form name="load_profile" method="POST">
                     <h3>Load server configuration profile</h3>
                     <select id="profile_name" name="profile_name">
@@ -57,7 +57,7 @@
                         <h4>Profile Description</h4>
                         <div id="profile_description">None</div>
                     </div>
-                    
+
                     <button type="submit" name="LoadProfile">Load Profile</button>
                 </form>
             </div>
@@ -69,29 +69,37 @@
                     <br />
                     <label for="num_ends">Number of ends:</label><br>
                     <input type="text" id="num_ends" name="num_ends" value="{{num_ends}}" required><br>
-                    
+
                     <label for="time_per_end">Time per end:</label><br>
                     <input type="text" id="time_per_end" name="time_per_end" value="{{time_per_end}}" required>
-                    
+
                     <label for="time_per_end_seconds">Seconds</label>
                     <input type="radio" id="time_per_end_seconds" name="time_per_end_unit" value="sec" checked/>
                     <label for="time_per_end_minutes">Minutes</label>
                     <input type="radio" id="time_per_end_minutes" name="time_per_end_unit" value="min"/>
                     <br />
-                    
+
                     <label for="stones_per_end">Stones per end:</label><br>
                     <input type="text" id="stones_per_end" name="stones_per_end" value="{{stones_per_end}}" required>
-        
+                    <br />
+
+                    <label for="count_in">Timer count in time:</label><br>
+                    <input type="text" id="count_in" name="count_in" value="{{count_in}}" required>
+                    <label for="count_in_seconds">Seconds</label>
+                    <input type="radio" id="count_in_seconds" name="count_in_unit" value="sec" checked/>
+                    <label for="count_in_minutes">Minutes</label>
+                    <input type="radio" id="count_in_minutes" name="count_in_unit" value="min"/>
+
                     <fieldset>
-                        <legend>Allow overtime:</legend>                
+                        <legend>Allow overtime:</legend>
                         <label for="allow_ot_true">True</label>
                         <input type="radio" id="allow_ot_true" name="allow_overtime" value="1" {% if allow_overtime %} checked {% endif %}/>
                         <label for="allow_ot_false">False</label>
                         <input type="radio" id="allow_ot_false" name="allow_overtime" value="0" {% if not allow_overtime %} checked {% endif %} />
                     </fieldset>
-        
+
                     <fieldset>
-                        <legend>Timer direction:</legend>                
+                        <legend>Timer direction:</legend>
                         <label for="countdown">Count down</label>
                         <input type="radio" id="countdown" name="count_direction" value="-1" {% if count_direction == -1 %} checked {% endif %}/>
                         <label for="countup">Count up</label>
@@ -117,15 +125,28 @@
     </div>
 
     <script>
-        var time_units = document.timerOptions.time_per_end_unit;
-        for (var i = 0; i < time_units.length; i++) {
-            time_units[i].addEventListener('change', function() {
+        var time_per_end_units = document.timerOptions.time_per_end_unit;
+        for (var i = 0; i < time_per_end_units.length; i++) {
+            time_per_end_units[i].addEventListener('change', function() {
                 var timePerEnd_Input = document.getElementById("time_per_end");
                 var timePerEnd = timePerEnd_Input.value;
                 if (this.value === "sec"){
                     timePerEnd_Input.value = timePerEnd * 60;
                 } else {
                     timePerEnd_Input.value = timePerEnd / 60;
+                }
+            });
+        }
+
+        var count_in_units = document.timerOptions.count_in_unit;
+        for (var i = 0; i < count_in_units.length; i++) {
+            count_in_units[i].addEventListener('change', function() {
+                var count_in_Input = document.getElementById("count_in");
+                var count_in = count_in_Input.value;
+                if (this.value === "sec"){
+                    count_in_Input.value = count_in * 60;
+                } else {
+                    count_in_Input.value = count_in / 60;
                 }
             });
         }
@@ -139,6 +160,16 @@
             //convert back to seconds before form is submitted if currently showing minutes
             if (!timePerEnd_Seconds.checked){
                 timePerEnd_Input.value = timePerEnd * 60;
+            }
+
+            var count_in_Input = document.getElementById("count_in");
+            var count_in = count_in_Input.value;
+
+            var count_in_Seconds = document.getElementById("count_in_seconds");
+
+            //convert back to seconds before form is submitted if currently showing minutes
+            if (!count_in_Seconds.checked){
+                count_in_Input.value = count_in * 60;
             }
         }
 
@@ -154,7 +185,7 @@
                 },
                 body: JSON.stringify(selectedProfile),
             })
-            .then(response => response.json())  
+            .then(response => response.json())
             .then(json => {
                 //this will be undefined if they re-select the default "Select a profile" dropdown option
                 if (json["description"] === undefined) json["description"] = "None";
@@ -164,14 +195,14 @@
         }
 
         // Add event listener to the profile name dropdown to update the profile description
-        document.getElementById('profile_name').addEventListener('change', function(){            
+        document.getElementById('profile_name').addEventListener('change', function(){
             event.preventDefault();
             updateDescription();
         });
 
         // If the form changes, then the profile has changed so we should no longer display
         // the profile description or name
-        document.getElementById('timerOptions').addEventListener('change', function(){            
+        document.getElementById('timerOptions').addEventListener('change', function(){
             event.preventDefault();
             document.getElementById('profile_name').value = "empty";
             updateDescription();

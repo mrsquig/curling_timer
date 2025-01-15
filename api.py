@@ -65,6 +65,7 @@ def index():
       app_config["count_direction"].value = request.form.get('count_direction')
       app_config["allow_overtime"].value = request.form.get("allow_overtime")
       app_config["stones_per_end"].value = request.form.get("stones_per_end")
+      app_config["count_in"].value = request.form.get("count_in")
 
   data = {key: value.value for key,value in app_config.items()}
   data["profiles"] = PROFILES.keys()
