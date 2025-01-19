@@ -88,6 +88,7 @@ class IceClock:
   def __init__(self, width=1280, height=720, fullscreen=False, styles_path=None, styles=None, jestermode=False, headless=False):
     # Initialize Pygame
     pygame.init()
+    pygame.mixer.init()
 
     # Initialize message stack
     self._messages = []
@@ -141,6 +142,9 @@ class IceClock:
     self.running = True
     self.fullscreen = fullscreen
     self.jestermode = jestermode
+
+    self._played_chime = False
+    self.chime = pygame.mixer.Sound(os.path.join(BASE_PATH, "static", "sounds", "783755__chungus43a__montreal-metro-door-chime.wav"))
 
   def init_UI(self):
     '''
@@ -441,6 +445,11 @@ class IceClock:
     for msg in messages:
       self._messages.append((msg, timestamp()))
 
+  def play_chime(self):
+    if not self._played_chime:
+      self.chime.play()
+      self._played_chime = True
+
   def render(self):
     '''
     Render all UI elements to the PyGame window
@@ -534,6 +543,9 @@ class IceClock:
       # Get the latest messages from the server and render all UI elements
       self.get_messages()
       self.render()
+
+      if self._server_config["bonspiel"] and self._end_number == self._server_config["num_ends"] - 1:
+        self.play_chime()
 
       # If there are messages, then update the UI more frequently. Otherwise,
       # update once per second.
