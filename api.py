@@ -128,7 +128,8 @@ def style_img():
 
 @app.route('/download_style', methods=['POST'])
 def download_style():
-  styles = request.get_json()
+  input_data = request.get_json()
+  styles=input_data["styles"]
   styles["colors"] = {k: tuple(v) for k,v in styles["colors"].items()}
   output_content = json.dumps(styles, indent=2)
 
