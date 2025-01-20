@@ -1,23 +1,61 @@
 {
-    "colors":
-    {
-        "SCREEN_BG": [14, 36, 82],
-        "BAR_FG1": [172, 154, 173],
-        "BAR_FG2": [0, 84, 61],
-        "BAR_BG": [14, 36, 82],
-        "BAR_DIVIDER": [14, 36, 82],
-        "rcc_blue_from_logo": [82, 101, 140],
-        "rcc_green_from_logo": [72, 136, 123],
-        "rcc_purple_from_logo": [172, 154, 173],
-        "rcc_blue_from_maxon": [14, 36, 82],
-        "rcc_green_from_maxon": [0, 84, 61],
-        "rcc_purple_from_maxon": [126, 104, 130],
-        "rcc_gold_from_maxon": [255, 194, 14]
+    "colors": {
+      "SCREEN_BG": [
+        82,
+        101,
+        140
+      ],
+      "TEXT": [
+        255,
+        255,
+        255
+      ],
+      "TEXT_END_MINUS1": [
+        226,
+        192,
+        0
+      ],
+      "TEXT_LASTEND": [
+        255,
+        143,
+        143
+      ],
+      "BAR_FG1": [
+        226,
+        192,
+        0
+      ],
+      "BAR_FG2": [
+        102,
+        43,
+        125
+      ],
+      "BAR_BG": [
+        74,
+        91,
+        126
+      ],
+      "BAR_BORDER": [
+        34,
+        42,
+        58
+      ],
+      "BAR_DIVIDER": [
+        34,
+        42,
+        58
+      ],
+      "rcc_blue_from_logo": [82, 101, 140],
+      "rcc_green_from_logo": [72, 136, 123],
+      "rcc_purple_from_logo": [172, 154, 173],
+      "rcc_blue_from_maxon": [14, 36, 82],
+      "rcc_green_from_maxon": [0, 84, 61],
+      "rcc_purple_from_maxon": [126, 104, 130],
+      "rcc_gold_from_maxon": [255, 194, 14]
     },
-    "parameters":
-    {
-        "color_every_nth": 2,
-        "divider_size": 5,
-        "bar_border_size": 5
+    "parameters": {
+      "color_every_nth": 2,
+      "divider_size": 10,
+      "bar_border_size": 10
     }
-}
+  }
