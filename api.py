@@ -162,6 +162,13 @@ def query_key():
   else:
     return jsonify({"error": "Key not found"}), 404
 
+def calc_num_bonspiel_ends():
+  if app_config["game_type"].value != "bonspiel":
+    return
+  time_to_chime = app_config["time_to_chime"].value
+  time_per_end = app_config["time_per_end"].value
+  app_config["num_ends"].value = int(time_to_chime/time_per_end) + 2
+
 @app.route('/update', methods=['GET'])
 def update_config():
   global app_config
@@ -171,13 +178,17 @@ def update_config():
   key = request.args.get('key')
   if not key:
     return jsonify({"error": "No key provided"}), 400
-
   if key not in app_config:
     return jsonify({"error": "Key not found"}), 500
+
+  if app_config["game_type"].value == "bonspiel" and key == "num_ends":
+    return jsonify({"error": "Number of ends cannot be updated in bonspiel mode"}), 400
+  calc_num_bonspiel_ends()
 
   new_value = request.args.get("value")
   if new_value:
     app_config[key].value = new_value
+    calc_num_bonspiel_ends()
     return jsonify({key: app_config[key].value}), 200
   return jsonify({"error": "No value provided"}), 400
 
