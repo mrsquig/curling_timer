@@ -201,7 +201,7 @@ class IceClock:
 
   @property
   def total_time(self):
-    return self._server_config["num_ends"] * self._server_config["time_per_end"]
+    return self._total_time
 
   def update_time(self):
     '''
@@ -224,6 +224,7 @@ class IceClock:
     self._end_percentage = times["end_percentage"]
     self._is_overtime = times["is_overtime"]
     self._uptime = times["uptime"]
+    self._total_time = times["total_time"]
 
   def get_text_color(self):
     if self._end_number < self._server_config["num_ends"] - 1:
@@ -255,10 +256,15 @@ class IceClock:
       text = self.fonts["last_end"].render("LAST END", True, color)
     elif self._is_overtime:
       text = self.fonts["last_end"].render("OVERTIME", True, color)
+    elif self._server_config["game_type"] == "bonspiel" and self._uptime >= self._server_config["time_to_chime"]:
+      text = self.fonts["last_end"].render("FINISH END +1", True, color)
     else:
       text = self.fonts["last_end"].render("", True, color)
 
-    text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 6.5*self.height // 16))
+    if self._server_config["game_type"] != "bonspiel":
+      text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 6.5*self.height // 16))
+    else:
+      text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))
     self.screen.blit(text, text_rect)
 
   def render_count_in_warning(self):
@@ -461,9 +467,19 @@ class IceClock:
       self.render_end_progress_bar()
     #self.render_end_progress_labels()
 
+    # If in bonspiel mode and it is the second to last end, play a chime
+    if (not self.headless and
+        self._server_config["game_type"] == "bonspiel" and
+        self._uptime == self._server_config["time_to_chime"]):
+      self.play_chime()
+
     # If there are messages, render them and skip the timer
     if self._messages:
       self.render_messages()
+    elif (self._server_config["game_type"] == "bonspiel" and
+        self._uptime >= self._server_config["time_to_chime"]):
+      # If bonspiel mode and the second to last end or later, then skip the timer
+      pass
     else:
       self.render_timer()
     self.render_detail_text()
@@ -543,9 +559,6 @@ class IceClock:
       # Get the latest messages from the server and render all UI elements
       self.get_messages()
       self.render()
-
-      if self._server_config["bonspiel"] and self._end_number == self._server_config["num_ends"] - 1:
-        self.play_chime()
 
       # If there are messages, then update the UI more frequently. Otherwise,
       # update once per second.
