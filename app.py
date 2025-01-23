@@ -451,8 +451,17 @@ class IceClock:
     for msg in messages:
       self._messages.append((msg, timestamp()))
 
-  def play_chime(self):
-    if not self._played_chime:
+  def handle_chime(self):
+    # If in bonspiel mode and play the chime if it is time to do so and has not
+    # been played yet
+    if self._server_config["is_game_complete"] or not self._server_config["is_timer_running"]:
+      self._played_chime = False
+      return
+
+    if (not self._played_chime and
+        not self.headless and
+        self._server_config["game_type"] == "bonspiel" and
+        self._uptime >= self._server_config["time_to_chime"]):
       self.chime.play()
       self._played_chime = True
 
@@ -466,12 +475,6 @@ class IceClock:
     if not self._server_config["count_in"]:
       self.render_end_progress_bar()
     #self.render_end_progress_labels()
-
-    # If in bonspiel mode and it is the second to last end, play a chime
-    if (not self.headless and
-        self._server_config["game_type"] == "bonspiel" and
-        self._uptime >= self._server_config["time_to_chime"]):
-      self.play_chime()
 
     # If there are messages, render them and skip the timer
     if self._messages:
@@ -557,6 +560,7 @@ class IceClock:
         self.update_time()
 
       # Get the latest messages from the server and render all UI elements
+      self.handle_chime()
       self.get_messages()
       self.render()
 
