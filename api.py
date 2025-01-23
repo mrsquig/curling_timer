@@ -313,9 +313,6 @@ def get_times():
 @app.route('/load_profile', methods=['GET'])
 def load_profile():
   global app_config
-  print(app_config["is_timer_running"].value and app_config["game_type"].value)
-  print(app_config["is_timer_running"].value)
-  print(app_config["game_type"].value)
   if app_config["is_timer_running"].value and app_config["game_type"].value == "bonspiel":
     return jsonify({"error": "Cannot update config while timer is running in bonspiel mode"}), 400
 
