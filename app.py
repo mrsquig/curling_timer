@@ -470,7 +470,7 @@ class IceClock:
     # If in bonspiel mode and it is the second to last end, play a chime
     if (not self.headless and
         self._server_config["game_type"] == "bonspiel" and
-        self._uptime == self._server_config["time_to_chime"]):
+        self._uptime >= self._server_config["time_to_chime"]):
       self.play_chime()
 
     # If there are messages, render them and skip the timer
