@@ -226,7 +226,7 @@ class IceClock:
       color = Color.TEXT.value
     elif self._end_number == self._server_config["num_ends"] - 1:
       color = Color.TEXT_END_MINUS1.value
-    elif self._end_number == self._server_config["num_ends"]:
+    elif self._end_number >= self._server_config["num_ends"] and not self._server_config["allow_overtime"]:
       color = Color.TEXT_LASTEND.value
     else:
       color = Color.OT.value
