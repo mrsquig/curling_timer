@@ -37,7 +37,8 @@ app_config = {
     "stones_per_end": ConfigValue(8, int),
     "is_game_complete": ConfigValue(False, bool_type),
     "count_in": ConfigValue(0, int),
-    "bonspiel": ConfigValue(False, bool_type)
+    "time_to_chime": ConfigValue(0, int),
+    "game_type": ConfigValue("league", str)
 }
 
 @app.route('/', methods=['GET','POST'])
@@ -54,7 +55,7 @@ def index():
     elif "Reset" in request.form:
       reset_timer()
     elif "LoadProfile" in request.form:
-      if app_config["is_timer_running"].value and app_config["bonspiel"].value:
+      if app_config["is_timer_running"].value and app_config["game_type"].value == "bonspiel":
         return jsonify({"error": "Cannot update config while timer is running in bonspiel mode"}), 400
 
       profile_name = request.form.get('profile_name')
@@ -64,7 +65,7 @@ def index():
       adjustVal = request.form.get('adjust_minutes')
       adjust_timer(adjustDir, adjustVal)
     else:
-      if app_config["is_timer_running"].value and app_config["bonspiel"].value:
+      if app_config["is_timer_running"].value and app_config["game_type"].value == "bonspiel":
         return jsonify({"error": "Cannot update config while timer is running in bonspiel mode"}), 400
 
       app_config["num_ends"].value = request.form.get('num_ends')
@@ -164,7 +165,7 @@ def query_key():
 @app.route('/update', methods=['GET'])
 def update_config():
   global app_config
-  if app_config["is_timer_running"].value and app_config["bonspiel"].value:
+  if app_config["is_timer_running"].value and app_config["game_type"].value == "bonspiel":
     return jsonify({"error": "Cannot update config while timer is running in bonspiel mode"}), 400
 
   key = request.args.get('key')
@@ -247,7 +248,9 @@ def get_times():
 
   # Calculate the total time of the game, then figure out which time to split into
   # hours, minutes, and seconds depending on if we're counting down or up
-  times["total_time"] = app_config["time_per_end"].value * app_config["num_ends"].value
+  times["total_time"] = (app_config["time_per_end"].value * app_config["num_ends"].value
+                         if not app_config["game_type"].value == "bonspiel" else
+                         app_config["time_to_chime"].value + 2*app_config["time_per_end"].value)
   game_time = times["total_time"] - uptime if app_config["count_direction"].value < 0 else uptime
 
   # Determine if we're over time or not. If allow_overtime is false, then the over time flag will always be false
@@ -284,10 +287,10 @@ def get_times():
 @app.route('/load_profile', methods=['GET'])
 def load_profile():
   global app_config
-  print(app_config["is_timer_running"].value and app_config["bonspiel"].value)
+  print(app_config["is_timer_running"].value and app_config["game_type"].value)
   print(app_config["is_timer_running"].value)
-  print(app_config["bonspiel"].value)
-  if app_config["is_timer_running"].value and app_config["bonspiel"].value:
+  print(app_config["game_type"].value)
+  if app_config["is_timer_running"].value and app_config["game_type"].value == "bonspiel":
     return jsonify({"error": "Cannot update config while timer is running in bonspiel mode"}), 400
 
   name = request.args.get('name')
