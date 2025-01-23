@@ -192,6 +192,10 @@ def update_config_route():
     return jsonify({"error": "Number of ends cannot be updated in bonspiel mode"}), 400
   calc_num_bonspiel_ends()
 
+  if app_config["game_type"].value == "bonspiel" and key == "num_ends":
+    return jsonify({"error": "Number of ends cannot be updated in bonspiel mode"}), 400
+  calc_num_bonspiel_ends()
+
   new_value = request.args.get("value")
   if new_value:
     update_config(key, new_value)
@@ -270,7 +274,9 @@ def get_times():
 
   # Calculate the total time of the game, then figure out which time to split into
   # hours, minutes, and seconds depending on if we're counting down or up
-  times["total_time"] = app_config["time_per_end"].value * app_config["num_ends"].value
+  times["total_time"] = (app_config["time_per_end"].value * app_config["num_ends"].value
+                         if not app_config["game_type"].value == "bonspiel" else
+                         app_config["time_to_chime"].value + 2*app_config["time_per_end"].value)
   game_time = times["total_time"] - uptime if app_config["count_direction"].value < 0 else uptime
 
   # Determine if we're over time or not. If allow_overtime is false, then the over time flag will always be false
