@@ -192,9 +192,6 @@ def update_config_route():
     return jsonify({"error": "Number of ends cannot be updated in bonspiel mode"}), 400
   calc_num_bonspiel_ends()
 
-  if app_config["game_type"].value == "bonspiel" and key == "num_ends":
-    return jsonify({"error": "Number of ends cannot be updated in bonspiel mode"}), 400
-  calc_num_bonspiel_ends()
 
   new_value = request.args.get("value")
   if new_value:
