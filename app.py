@@ -88,6 +88,7 @@ class IceClock:
   def __init__(self, width=1280, height=720, fullscreen=False, styles_path=None, styles=None, jestermode=False, headless=False):
     # Initialize Pygame
     pygame.init()
+    pygame.mixer.init()
 
     # Initialize message stack
     self._messages = []
@@ -141,6 +142,9 @@ class IceClock:
     self.running = True
     self.fullscreen = fullscreen
     self.jestermode = jestermode
+
+    self._played_chime = False
+    self.chime = pygame.mixer.Sound(os.path.join(BASE_PATH, "static", "sounds", "783755__chungus43a__montreal-metro-door-chime.wav"))
 
   def init_UI(self):
     '''
@@ -197,7 +201,7 @@ class IceClock:
 
   @property
   def total_time(self):
-    return self._server_config["num_ends"] * self._server_config["time_per_end"]
+    return self._total_time
 
   def update_time(self):
     '''
@@ -220,6 +224,7 @@ class IceClock:
     self._end_percentage = times["end_percentage"]
     self._is_overtime = times["is_overtime"]
     self._uptime = times["uptime"]
+    self._total_time = times["total_time"]
 
   def get_text_color(self):
     if self._end_number < self._server_config["num_ends"] - 1:
@@ -251,10 +256,15 @@ class IceClock:
       text = self.fonts["last_end"].render("LAST END", True, color)
     elif self._is_overtime:
       text = self.fonts["last_end"].render("OVERTIME", True, color)
+    elif self._server_config["game_type"] == "bonspiel" and self._uptime >= self._server_config["time_to_chime"]:
+      text = self.fonts["last_end"].render("FINISH END +1", True, color)
     else:
       text = self.fonts["last_end"].render("", True, color)
 
-    text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 6.5*self.height // 16))
+    if self._server_config["game_type"] != "bonspiel":
+      text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 6.5*self.height // 16))
+    else:
+      text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))
     self.screen.blit(text, text_rect)
 
   def render_count_in_warning(self):
@@ -441,6 +451,20 @@ class IceClock:
     for msg in messages:
       self._messages.append((msg, timestamp()))
 
+  def handle_chime(self):
+    # If in bonspiel mode and play the chime if it is time to do so and has not
+    # been played yet
+    if self._server_config["is_game_complete"] or not self._server_config["is_timer_running"]:
+      self._played_chime = False
+      return
+
+    if (not self._played_chime and
+        not self.headless and
+        self._server_config["game_type"] == "bonspiel" and
+        self._uptime >= self._server_config["time_to_chime"]):
+      self.chime.play()
+      self._played_chime = True
+
   def render(self):
     '''
     Render all UI elements to the PyGame window
@@ -455,6 +479,10 @@ class IceClock:
     # If there are messages, render them and skip the timer
     if self._messages:
       self.render_messages()
+    elif (self._server_config["game_type"] == "bonspiel" and
+        self._uptime >= self._server_config["time_to_chime"]):
+      # If bonspiel mode and the second to last end or later, then skip the timer
+      pass
     else:
       self.render_timer()
     self.render_detail_text()
@@ -532,6 +560,7 @@ class IceClock:
         self.update_time()
 
       # Get the latest messages from the server and render all UI elements
+      self.handle_chime()
       self.get_messages()
       self.render()
 

@@ -66,29 +66,50 @@
             <div class="card">
                 <form id="timerOptions" name="timerOptions" onsubmit="submitPreprocessing();" method="POST">
                     <h3>Timer Options</h3>
-                    <br />
-                    <label for="num_ends">Number of ends:</label><br>
-                    <input type="text" id="num_ends" name="num_ends" value="{{num_ends}}" required><br>
+                    <div class="form_container">
+                        <label for="game_type">Game type:</label><br>
+                        <select id="game_type" name="game_type">
+                            <option value="league" {% if game_type == "league" %}selected{% endif %}>League</option>
+                            <option value="bonspiel" {% if game_type == "bonspiel" %}selected{% endif %}>Bonspiel</option>
+                        </select>
+                    </div>
 
-                    <label for="time_per_end">Time per end:</label><br>
-                    <input type="text" id="time_per_end" name="time_per_end" value="{{time_per_end}}" required>
+                    <div class="form_container">
+                        <label for="num_ends">Number of ends:</label><br>
+                        <input type="text" id="num_ends" name="num_ends" value="{{num_ends}}" required>
+                    </div>
 
-                    <label for="time_per_end_seconds">Seconds</label>
-                    <input type="radio" id="time_per_end_seconds" name="time_per_end_unit" value="sec" checked/>
-                    <label for="time_per_end_minutes">Minutes</label>
-                    <input type="radio" id="time_per_end_minutes" name="time_per_end_unit" value="min"/>
-                    <br />
+                    <div class="form_container">
+                        <label for="time_to_chime">Time to chime:</label><br>
+                        <input type="text" id="time_to_chime" name="time_to_chime" value="{{time_to_chime}}" required>
+                        <label for="time_to_chime_seconds">Seconds</label>
+                        <input type="radio" id="time_to_chime_seconds" name="time_to_chime_unit" value="sec" checked/>
+                        <label for="time_to_chime_minutes">Minutes</label>
+                        <input type="radio" id="time_to_chime_minutes" name="time_to_chime_unit" value="min"/>
+                    </div>
 
-                    <label for="stones_per_end">Stones per end:</label><br>
-                    <input type="text" id="stones_per_end" name="stones_per_end" value="{{stones_per_end}}" required>
-                    <br />
+                    <div class="form_container">
+                        <label for="time_per_end">Time per end:</label><br>
+                        <input type="text" id="time_per_end" name="time_per_end" value="{{time_per_end}}" required>
+                        <label for="time_per_end_seconds">Seconds</label>
+                        <input type="radio" id="time_per_end_seconds" name="time_per_end_unit" value="sec" checked/>
+                        <label for="time_per_end_minutes">Minutes</label>
+                        <input type="radio" id="time_per_end_minutes" name="time_per_end_unit" value="min"/>
+                    </div>
 
-                    <label for="count_in">Timer count in:</label><br>
-                    <input type="text" id="count_in" name="count_in" value="{{count_in}}" required>
-                    <label for="count_in_seconds">Seconds</label>
-                    <input type="radio" id="count_in_seconds" name="count_in_unit" value="sec" checked/>
-                    <label for="count_in_minutes">Minutes</label>
-                    <input type="radio" id="count_in_minutes" name="count_in_unit" value="min"/>
+                    <div class="form_container">
+                        <label for="stones_per_end">Stones per end:</label><br>
+                        <input type="text" id="stones_per_end" name="stones_per_end" value="{{stones_per_end}}" required>
+                    </div>
+
+                    <div class="form_container">
+                        <label for="count_in">Timer count in:</label><br>
+                        <input type="text" id="count_in" name="count_in" value="{{count_in}}" required>
+                        <label for="count_in_seconds">Seconds</label>
+                        <input type="radio" id="count_in_seconds" name="count_in_unit" value="sec" checked/>
+                        <label for="count_in_minutes">Minutes</label>
+                        <input type="radio" id="count_in_minutes" name="count_in_unit" value="min"/>
+                    </div>
 
                     <fieldset>
                         <legend>Allow overtime:</legend>
@@ -151,6 +172,19 @@
             });
         }
 
+        var time_to_chime_units = document.timerOptions.time_to_chime_unit;
+        for (var i = 0; i < time_to_chime_units.length; i++) {
+            time_to_chime_units[i].addEventListener('change', function() {
+                var time_to_chime_Input = document.getElementById("time_to_chime");
+                var time_to_chime = time_to_chime_Input.value;
+                if (this.value === "sec"){
+                    time_to_chime_Input.value = time_to_chime * 60;
+                } else {
+                    time_to_chime_Input.value = time_to_chime / 60;
+                }
+            });
+        }
+
         function submitPreprocessing() {
             var timePerEnd_Input = document.getElementById("time_per_end");
             var timePerEnd = timePerEnd_Input.value;
@@ -170,6 +204,16 @@
             //convert back to seconds before form is submitted if currently showing minutes
             if (!count_in_Seconds.checked){
                 count_in_Input.value = count_in * 60;
+            }
+
+            var time_to_chime_Input = document.getElementById("time_to_chime");
+            var time_to_chime = time_to_chime_Input.value;
+
+            var time_to_chime_Seconds = document.getElementById("time_to_chime_seconds");
+
+            //convert back to seconds before form is submitted if currently showing minutes
+            if (!time_to_chime_Seconds.checked){
+                time_to_chime_Input.value = time_to_chime * 60;
             }
         }
 
@@ -194,6 +238,22 @@
             .catch(error => console.error('Error:', error));
         }
 
+        function onGameTypeChange() {
+            selectedType = document.getElementById('game_type').value;
+            if (selectedType === "bonspiel") {
+                document.getElementById('num_ends').parentElement.classList.add('hidden');
+                document.getElementById('time_to_chime').parentElement.classList.remove('hidden');
+            } else {
+                document.getElementById('num_ends').parentElement.classList.remove('hidden');
+                document.getElementById('time_to_chime').parentElement.classList.add('hidden');
+            }
+        }
+
+        document.getElementById('game_type').addEventListener('change', function(){
+            event.preventDefault();
+            onGameTypeChange();
+        });
+
         // Add event listener to the profile name dropdown to update the profile description
         document.getElementById('profile_name').addEventListener('change', function(){
             event.preventDefault();
@@ -210,6 +270,7 @@
 
         // Update the profile description when the page loads
         updateDescription();
+        onGameTypeChange();
     </script>
 </body>
 </html>

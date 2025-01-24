@@ -36,7 +36,9 @@ app_config = {
     "is_timer_running": ConfigValue(False, bool_type),
     "stones_per_end": ConfigValue(8, int),
     "is_game_complete": ConfigValue(False, bool_type),
-    "count_in": ConfigValue(0, int)
+    "count_in": ConfigValue(0, int),
+    "time_to_chime": ConfigValue(6000, int),
+    "game_type": ConfigValue("league", str)
 }
 
 @app.route('/', methods=['GET','POST'])
@@ -53,6 +55,9 @@ def index():
     elif "Reset" in request.form:
       reset_timer()
     elif "LoadProfile" in request.form:
+      if app_config["is_timer_running"].value and app_config["game_type"].value == "bonspiel":
+        return jsonify({"error": "Cannot update config while timer is running in bonspiel mode"}), 400
+
       profile_name = request.form.get('profile_name')
       update_config_with_profile(profile_name)
     elif "AdjustTimer" in request.form:
@@ -60,12 +65,21 @@ def index():
       adjustVal = request.form.get('adjust_minutes')
       adjust_timer(adjustDir, adjustVal)
     else:
-      app_config["num_ends"].value = request.form.get('num_ends')
-      app_config["time_per_end"].value = request.form.get('time_per_end')
-      app_config["count_direction"].value = request.form.get('count_direction')
-      app_config["allow_overtime"].value = request.form.get("allow_overtime")
-      app_config["stones_per_end"].value = request.form.get("stones_per_end")
-      app_config["count_in"].value = request.form.get("count_in")
+      if app_config["is_timer_running"].value and app_config["game_type"].value == "bonspiel":
+        return jsonify({"error": "Cannot update config while timer is running in bonspiel mode"}), 400
+
+      # In bonspiel mode the number of ends is calculated automatically
+      update_config("game_type", request.form.get("game_type"))
+      if app_config["game_type"].value != "bonspiel":
+        update_config("num_ends", request.form.get("num_ends"))
+      else:
+        update_config("time_to_chime", request.form.get("time_to_chime"))
+
+      update_config("time_per_end", request.form.get("time_per_end"))
+      update_config("count_direction", request.form.get("count_direction"))
+      update_config("allow_overtime", request.form.get("allow_overtime"))
+      update_config("stones_per_end", request.form.get("stones_per_end"))
+      update_config("count_in", request.form.get("count_in"))
 
   data = {key: value.value for key,value in app_config.items()}
   data["profiles"] = PROFILES.keys()
@@ -154,21 +168,41 @@ def query_key():
   else:
     return jsonify({"error": "Key not found"}), 404
 
+def calc_num_bonspiel_ends():
+  if app_config["game_type"].value != "bonspiel":
+    return
+  time_to_chime = app_config["time_to_chime"].value
+  time_per_end = app_config["time_per_end"].value
+  # int rounds down, so if the chime occurs during an end we need to add
+  # that end, then one more.
+  app_config["num_ends"].value = int(time_to_chime/time_per_end) + 2
+
 @app.route('/update', methods=['GET'])
-def update_config():
-  global app_config
+def update_config_route():
+  if app_config["is_timer_running"].value and app_config["game_type"].value == "bonspiel":
+    return jsonify({"error": "Cannot update config while timer is running in bonspiel mode"}), 400
+
   key = request.args.get('key')
   if not key:
     return jsonify({"error": "No key provided"}), 400
-
   if key not in app_config:
     return jsonify({"error": "Key not found"}), 500
 
+  if app_config["game_type"].value == "bonspiel" and key == "num_ends":
+    return jsonify({"error": "Number of ends cannot be updated in bonspiel mode"}), 400
+  calc_num_bonspiel_ends()
+
+
   new_value = request.args.get("value")
   if new_value:
-    app_config[key].value = new_value
+    update_config(key, new_value)
     return jsonify({key: app_config[key].value}), 200
   return jsonify({"error": "No value provided"}), 400
+
+def update_config(key, new_value):
+  global app_config
+  app_config[key].value = new_value
+  calc_num_bonspiel_ends()
 
 @app.route('/start', methods=['GET'])
 def start_timer():
@@ -273,6 +307,10 @@ def get_times():
 
 @app.route('/load_profile', methods=['GET'])
 def load_profile():
+  global app_config
+  if app_config["is_timer_running"].value and app_config["game_type"].value == "bonspiel":
+    return jsonify({"error": "Cannot update config while timer is running in bonspiel mode"}), 400
+
   name = request.args.get('name')
   if not name:
     return jsonify({"error": "Profile name not specified"}), 400
