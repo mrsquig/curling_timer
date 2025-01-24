@@ -146,75 +146,42 @@
     </div>
 
     <script>
-        var time_per_end_units = document.timerOptions.time_per_end_unit;
-        for (var i = 0; i < time_per_end_units.length; i++) {
-            time_per_end_units[i].addEventListener('change', function() {
-                var timePerEnd_Input = document.getElementById("time_per_end");
-                var timePerEnd = timePerEnd_Input.value;
-                if (this.value === "sec"){
-                    timePerEnd_Input.value = timePerEnd * 60;
-                } else {
-                    timePerEnd_Input.value = timePerEnd / 60;
-                }
-            });
+        function handleUnitChange(inputId, unitElements) {
+            var inputElement = document.getElementById(inputId);
+
+            for (var i = 0; i < unitElements.length; i++) {
+                unitElements[i].addEventListener('change', function() {
+                    var inputValue = inputElement.value;
+                    if (this.value === "sec") {
+                        inputElement.value = inputValue * 60;
+                    } else {
+                        inputElement.value = inputValue / 60;
+                    }
+                });
+            }
         }
 
-        var count_in_units = document.timerOptions.count_in_unit;
-        for (var i = 0; i < count_in_units.length; i++) {
-            count_in_units[i].addEventListener('change', function() {
-                var count_in_Input = document.getElementById("count_in");
-                var count_in = count_in_Input.value;
-                if (this.value === "sec"){
-                    count_in_Input.value = count_in * 60;
-                } else {
-                    count_in_Input.value = count_in / 60;
-                }
-            });
-        }
+        // Setup callback functions for unit changes
+        handleUnitChange("time_per_end", document.timerOptions.time_per_end_unit);
+        handleUnitChange("count_in", document.timerOptions.count_in_unit);
+        handleUnitChange("time_to_chime", document.timerOptions.time_to_chime_unit);
 
-        var time_to_chime_units = document.timerOptions.time_to_chime_unit;
-        for (var i = 0; i < time_to_chime_units.length; i++) {
-            time_to_chime_units[i].addEventListener('change', function() {
-                var time_to_chime_Input = document.getElementById("time_to_chime");
-                var time_to_chime = time_to_chime_Input.value;
-                if (this.value === "sec"){
-                    time_to_chime_Input.value = time_to_chime * 60;
-                } else {
-                    time_to_chime_Input.value = time_to_chime / 60;
-                }
-            });
+        function convertToSecondsIfNeeded(inputId, seconds_radioId) {
+            var inputElement = document.getElementById(inputId);
+            var inputValue = inputElement.value;
+            var seconds_radio = document.getElementById(seconds_radioId);
+
+            // Convert to seconds if seconds_radio is unchecked (i.e., currently showing minutes)
+            if (!seconds_radio.checked) {
+                inputElement.value = inputValue * 60;
+            }
         }
 
         function submitPreprocessing() {
-            var timePerEnd_Input = document.getElementById("time_per_end");
-            var timePerEnd = timePerEnd_Input.value;
-
-            var timePerEnd_Seconds = document.getElementById("time_per_end_seconds");
-
-            //convert back to seconds before form is submitted if currently showing minutes
-            if (!timePerEnd_Seconds.checked){
-                timePerEnd_Input.value = timePerEnd * 60;
-            }
-
-            var count_in_Input = document.getElementById("count_in");
-            var count_in = count_in_Input.value;
-
-            var count_in_Seconds = document.getElementById("count_in_seconds");
-
-            //convert back to seconds before form is submitted if currently showing minutes
-            if (!count_in_Seconds.checked){
-                count_in_Input.value = count_in * 60;
-            }
-
-            var time_to_chime_Input = document.getElementById("time_to_chime");
-            var time_to_chime = time_to_chime_Input.value;
-
-            var time_to_chime_Seconds = document.getElementById("time_to_chime_seconds");
-
-            //convert back to seconds before form is submitted if currently showing minutes
-            if (!time_to_chime_Seconds.checked){
-                time_to_chime_Input.value = time_to_chime * 60;
-            }
+            // Convert times back to seconds before submitting form if needed
+            convertToSecondsIfNeeded("time_per_end", "time_per_end_seconds");
+            convertToSecondsIfNeeded("count_in", "count_in_seconds");
+            convertToSecondsIfNeeded("time_to_chime", "time_to_chime_seconds");
         }
 
         function updateDescription() {
