@@ -252,7 +252,9 @@ class IceClock:
     color = self.get_text_color()
 
     is_last_end = self._end_number >= self._server_config["num_ends"]
-    if is_last_end and not self._is_overtime:
+    if self._server_config["game_type"] == "bonspiel" and self._server_config["is_game_complete"]:
+      text = self.fonts["last_end"].render("GAME OVER", True, color)
+    elif is_last_end and not self._is_overtime:
       text = self.fonts["last_end"].render("LAST END", True, color)
     elif self._is_overtime:
       text = self.fonts["last_end"].render("OVERTIME", True, color)
