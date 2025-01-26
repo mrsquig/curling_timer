@@ -13,7 +13,17 @@ import logging
 logging.basicConfig()
 logger = logging.getLogger("test_app")
 
-GENERATE_GOLDENS = True
+GENERATE_GOLDENS = "-g" in sys.argv or "--golden" in sys.argv
+# There are command line arguments defined by unittest. Intercept the arguments
+# to check if there is a "--golden" or "-g" flag, then remove it from the list
+# before the rest of the arguments are parsed
+if GENERATE_GOLDENS:
+  for idx in range(len(sys.argv)):
+    if "-g" == sys.argv[idx] or "--golden" == sys.argv[idx]:
+      break
+  sys.argv.pop(idx)
+  logger.info("Generating goldens -- tests are not being run!")
+
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 GOLDEN_DIR = os.path.join(BASE_PATH, "app_tests")
 
@@ -157,16 +167,4 @@ class TestIceClock(unittest.TestCase):
     self.image_test(img_io, golden_path)
 
 if __name__ == '__main__':
-  GENERATE_GOLDENS = "-g" in sys.argv or "--golden" in sys.argv
-
-  # There are command line arguments defined by unittest. Intercept the arguments
-  # to check if there is a "--golden" or "-g" flag, then remove it from the list
-  # before the rest of the arguments are parsed
-  if GENERATE_GOLDENS:
-    for idx in range(len(sys.argv)):
-      if "-g" == sys.argv[idx] or "--golden" == sys.argv[idx]:
-        break
-    sys.argv.pop(idx)
-    logger.info("Generating goldens -- tests are not being run!")
-
   unittest.main()
