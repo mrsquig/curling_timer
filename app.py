@@ -254,12 +254,12 @@ class IceClock:
     is_last_end = self._end_number >= self._server_config["num_ends"]
     if self._server_config["game_type"] == "bonspiel" and self._server_config["is_game_complete"]:
       text = self.fonts["last_end"].render("GAME OVER", True, color)
+    elif self._server_config["game_type"] == "bonspiel" and self._uptime >= self._server_config["time_to_chime"]:
+      text = self.fonts["last_end"].render("FINISH END +1", True, color)
     elif is_last_end and not self._is_overtime:
       text = self.fonts["last_end"].render("LAST END", True, color)
     elif self._is_overtime:
       text = self.fonts["last_end"].render("OVERTIME", True, color)
-    elif self._server_config["game_type"] == "bonspiel" and self._uptime >= self._server_config["time_to_chime"]:
-      text = self.fonts["last_end"].render("FINISH END +1", True, color)
     else:
       text = self.fonts["last_end"].render("", True, color)
 
@@ -423,7 +423,10 @@ class IceClock:
     if len(msg[0]) > MESSAGE_CHR_HARD_LIMIT*MESSAGE_LINE_LIMIT-3:
       line_buf += "..."
 
-    output_lines.append(line_buf)
+    if len(output_lines) < MESSAGE_LINE_LIMIT:
+      output_lines.append(line_buf)
+    else:
+      output_lines[MESSAGE_LINE_LIMIT-1] = "{:s}...".format(output_lines[MESSAGE_LINE_LIMIT-1][:MESSAGE_CHR_HARD_LIMIT-3])
     Nlines = len(output_lines)
 
     # Render the message to the screen
