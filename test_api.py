@@ -1,5 +1,5 @@
 import unittest
-from api import app, app_config, timestamp
+from api import app, server_config, timestamp
 
 class CurlingTimerTestCase(unittest.TestCase):
     def setUp(self):
@@ -13,18 +13,18 @@ class CurlingTimerTestCase(unittest.TestCase):
     def test_version(self):
         response = self.app.get('/version')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json, {"version": {"value": app_config["version"].value}})
+        self.assertEqual(response.json, {"version": {"value": server_config["version"].value}})
 
     def test_query_key(self):
         response = self.app.get('/config?key=num_ends')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json, {"num_ends": app_config["num_ends"].value})
+        self.assertEqual(response.json, {"num_ends": server_config["num_ends"].value})
 
         response = self.app.get('/config?key=invalid_key')
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json, {"error": "Key not found"})
 
-    def test_update_config(self):        
+    def test_update_config(self):
         response = self.app.get('/update')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json, {"error": "No key provided"})
@@ -40,18 +40,18 @@ class CurlingTimerTestCase(unittest.TestCase):
     def test_start_timer(self):
         response = self.app.get('/start')
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(app_config["is_timer_running"].value)
+        self.assertTrue(server_config["is_timer_running"].value)
 
     def test_stop_timer(self):
         self.app.get('/start')
         response = self.app.get('/stop')
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(app_config["is_timer_running"].value)
+        self.assertFalse(server_config["is_timer_running"].value)
 
     def test_reset_timer(self):
         response = self.app.get('/reset')
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(app_config["is_timer_running"].value)
+        self.assertFalse(server_config["is_timer_running"].value)
 
     def test_get_times(self):
         response = self.app.get('/game_times')
