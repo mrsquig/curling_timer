@@ -20,8 +20,12 @@ GOLDEN_DIR = os.path.join(BASE_PATH, "app_tests")
 def render_app(clock, end_num, end_percentage):
   img_io = io.BytesIO()
 
-  total_time = server_config["time_per_end"].value * server_config["num_ends"].value
-  elapsed = server_config["time_per_end"].value * (end_num - 1) + end_percentage * server_config["time_per_end"].value
+  if not clock._server_config["count_in"]:
+    total_time = clock._server_config["time_per_end"] * clock._server_config["num_ends"]
+    elapsed = clock._server_config["time_per_end"] * (end_num - 1) + end_percentage * clock._server_config["time_per_end"]
+  else:
+    total_time = clock._server_config["count_in"]
+    elapsed = 0
 
   clock._hours = int((total_time-elapsed) // 3600)
   clock._minutes = int(((total_time-elapsed) // 60) % 60)
@@ -128,6 +132,26 @@ class TestIceClock(unittest.TestCase):
     end_percentage = 0.5
     self.clock._server_config["game_type"] = "bonspiel"
     self.clock._server_config["time_to_chime"] = 6000
+    self.clock._uptime = self.clock._server_config["time_per_end"] * (end_num-1+end_percentage)
+    img_io = render_app(self.clock, end_num, end_percentage)
+    self.image_test(img_io, golden_path)
+
+  @set_golden_path
+  def test_spiel_after_game(self, golden_path=None):
+    end_num = 9
+    end_percentage = 0.0
+    self.clock._server_config["game_type"] = "bonspiel"
+    self.clock._server_config["time_to_chime"] = 6000
+    self.clock._server_config["is_game_complete"] = True
+    self.clock._uptime = self.clock._server_config["time_per_end"] * (end_num-1+end_percentage)
+    img_io = render_app(self.clock, end_num, end_percentage)
+    self.image_test(img_io, golden_path)
+
+  @set_golden_path
+  def test_count_in(self, golden_path=None):
+    end_num = 1
+    end_percentage = 0.0
+    self.clock._server_config["count_in"] = 10
     self.clock._uptime = self.clock._server_config["time_per_end"] * (end_num-1+end_percentage)
     img_io = render_app(self.clock, end_num, end_percentage)
     self.image_test(img_io, golden_path)
