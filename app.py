@@ -146,6 +146,10 @@ class IceClock:
     self._played_chime = False
     self.chime = pygame.mixer.Sound(os.path.join(BASE_PATH, "static", "sounds", "783755__chungus43a__montreal-metro-door-chime.wav"))
 
+  def create_font(self, numerator, denominator):
+    jetbrains = os.path.join(BASE_PATH, "ttf", "JetBrainsMono-Medium.ttf")
+    return pygame.font.Font(jetbrains, numerator*self.height // denominator)
+
   def init_UI(self):
     '''
     Initialize UI elements
@@ -153,14 +157,13 @@ class IceClock:
     '''
     # Set up the fonts
     #courier = pygame.font.match_font("couriernew", bold=True)
-    jetbrains = os.path.join(BASE_PATH, "ttf", "JetBrainsMono-Medium.ttf")
     self.fonts = {}
-    self.fonts["timer"] = pygame.font.Font(jetbrains, 3*self.height // 16)
-    self.fonts["last_end"] = pygame.font.Font(jetbrains, 2*self.height // 16)
-    self.fonts["end"] = pygame.font.Font(jetbrains,  self.height // 2)
-    self.fonts["end_progress_label"] = pygame.font.Font(jetbrains, self.height // 32)
-    self.fonts["messages"] = pygame.font.Font(jetbrains, 3*self.height // 32)
-    self.fonts["count_in"] = pygame.font.Font(jetbrains, 4*self.height // 16)
+    self.fonts["timer"] = self.create_font(3, 16)
+    self.fonts["last_end"] = self.create_font(2, 16)
+    self.fonts["end"] = self.create_font(1, 2)
+    self.fonts["end_progress_label"] = self.create_font(1, 32)
+    self.fonts["messages"] = self.create_font(3, 32)
+    self.fonts["count_in"] = self.create_font(4, 16)
 
   def update_styles(self):
     global Color
