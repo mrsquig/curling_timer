@@ -349,13 +349,20 @@ class IceClock:
     color1 = Color.BAR_FG1.value if not self.jestermode else (255, 0, 0)
     color2 = Color.BAR_FG2.value if not self.jestermode else (0, 255, 0)
 
+    is_doubles = self._server_config["stones_per_end"] == 5 or self._server_config["stones_per_end"] == 10
+
     for rect in bar_bg_rects:
       for i in range(stones_per_end):
         section_rect = pygame.Rect(rect.x, rect.y + self.bar_height - (i + 1) * section_height,
                                     self.bar_width, section_height)
         # Alternate colors for each stone section
-        color_mod = 2*self.styles["parameters"]["color_every_nth"]
-        color = color1 if i % color_mod < int(color_mod/2) else color2
+        if not is_doubles:
+          color_mod = 2*self.styles["parameters"]["color_every_nth"]
+          color = color1 if i % color_mod < int(color_mod/2) else color2
+        else:
+          n = self._server_config["stones_per_end"]//5
+          color = color1 if i < n or i > self._server_config["stones_per_end"]-n-1 else color2
+
         border_radius = self.height // 100 if i == 0 or i == stones_per_end - 1 else 0
         if (i + 1) * section_height <= filled_height:
           pygame.draw.rect(self.screen, color, section_rect, border_radius=border_radius)

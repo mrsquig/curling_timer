@@ -71,7 +71,7 @@ class TestIceClock(unittest.TestCase):
       self.assertTrue(np.all(diff[:,:,channel] <= 1))
 
   def image_test(self, img_io, golden_path):
-    if GENERATE_GOLDENS:
+    if GENERATE_GOLDENS or not os.path.isfile(golden_path):
       with open(golden_path, "wb") as outfile:
         outfile.write(img_io.getvalue())
       self.assertEqual(True, True)
@@ -162,6 +162,24 @@ class TestIceClock(unittest.TestCase):
     end_num = 1
     end_percentage = 0.0
     self.clock._server_config["count_in"] = 10
+    self.clock._uptime = self.clock._server_config["time_per_end"] * (end_num-1+end_percentage)
+    img_io = render_app(self.clock, end_num, end_percentage)
+    self.image_test(img_io, golden_path)
+
+  @set_golden_path
+  def test_doubles_5stones(self, golden_path=None):
+    end_num = 1
+    end_percentage = 0.0
+    self.clock._server_config["stones_per_end"] = 5
+    self.clock._uptime = self.clock._server_config["time_per_end"] * (end_num-1+end_percentage)
+    img_io = render_app(self.clock, end_num, end_percentage)
+    self.image_test(img_io, golden_path)
+
+  @set_golden_path
+  def test_doubles_10stones(self, golden_path=None):
+    end_num = 1
+    end_percentage = 0.0
+    self.clock._server_config["stones_per_end"] = 10
     self.clock._uptime = self.clock._server_config["time_per_end"] * (end_num-1+end_percentage)
     img_io = render_app(self.clock, end_num, end_percentage)
     self.image_test(img_io, golden_path)
