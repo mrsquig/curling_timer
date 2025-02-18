@@ -271,7 +271,11 @@ def get_times():
 
   # Calculate the total time of the game, then figure out which time to split into
   # hours, minutes, and seconds depending on if we're counting down or up
-  times["total_time"] = server_config["time_per_end"].value * server_config["num_ends"].value
+  league_time = server_config["time_per_end"].value * server_config["num_ends"].value
+  if server_config["game_type"].value != "bonspiel":
+    times["total_time"] = league_time
+  else:
+    times["total_time"] = server_config["time_to_chime"].value
   game_time = times["total_time"] - uptime if server_config["count_direction"].value < 0 else uptime
 
   # Determine if we're over time or not. If allow_overtime is false, then the over time flag will always be false
@@ -279,7 +283,7 @@ def get_times():
 
   # If we don't allow overtime and the timer is done, directly call the stop function so timing stops
   # and set the time to 0 or total time, so it stays that way
-  if uptime >= times["total_time"] and not server_config["allow_overtime"].value:
+  if uptime >= league_time and not server_config["allow_overtime"].value:
     stop_timer()
     game_time = 0 if server_config["count_direction"].value < 0 else times["total_time"]
     server_config["is_game_complete"].value = True
