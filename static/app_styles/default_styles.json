@@ -3,8 +3,8 @@
     {
         "SCREEN_BG": [0, 0, 0],
         "TEXT": [255, 255, 255],
-        "TEXT_END_MINUS1": [255, 204, 42],
-        "TEXT_LASTEND": [160, 80, 40],
+        "TEXT_WARNING_1": [255, 204, 42],
+        "TEXT_WARNING_2": [160, 80, 40],
         "BAR_FG1": [0, 80, 240],
         "BAR_FG2": [130, 0, 150],
         "BAR_BG": [50, 50, 50],

@@ -65,8 +65,8 @@ def color_factory(colors=None):
   class Color(Enum):
     SCREEN_BG = colors["SCREEN_BG"] if "SCREEN_BG" in colors else default_styles["colors"]["SCREEN_BG"]
     TEXT = colors["TEXT"] if "TEXT" in colors else default_styles["colors"]["TEXT"]
-    TEXT_END_MINUS1 = colors["TEXT_END_MINUS1"] if "TEXT_END_MINUS1" in colors else default_styles["colors"]["TEXT_END_MINUS1"]
-    TEXT_LASTEND = colors["TEXT_LASTEND"] if "TEXT_LASTEND" in colors else default_styles["colors"]["TEXT_LASTEND"]
+    TEXT_WARNING_1 = colors["TEXT_WARNING_1"] if "TEXT_WARNING_1" in colors else default_styles["colors"]["TEXT_WARNING_1"]
+    TEXT_WARNING_2 = colors["TEXT_WARNING_2"] if "TEXT_WARNING_2" in colors else default_styles["colors"]["TEXT_WARNING_2"]
     BAR_FG1 = colors["BAR_FG1"] if "BAR_FG1" in colors else default_styles["colors"]["BAR_FG1"]
     BAR_FG2 = colors["BAR_FG2"] if "BAR_FG2" in colors else default_styles["colors"]["BAR_FG2"]
     BAR_BG = colors["BAR_BG"] if "BAR_BG" in colors else default_styles["colors"]["BAR_BG"]
@@ -206,6 +206,16 @@ class IceClock:
   def total_time(self):
     return self._total_time
 
+  @property
+  def warning_level(self):
+    if self._end_number < self._server_config["num_ends"] - 1:
+      return None
+    elif self._end_number == self._server_config["num_ends"] - 1:
+      return 1
+    elif self._end_number >= self._server_config["num_ends"] and not self._server_config["allow_overtime"]:
+      return 2
+    return -1
+
   def update_time(self):
     '''
     Get the latest game time information through the REST API
@@ -230,12 +240,12 @@ class IceClock:
     self._total_time = times["total_time"]
 
   def get_text_color(self):
-    if self._end_number < self._server_config["num_ends"] - 1:
+    if not self.warning_level:
       color = Color.TEXT.value
-    elif self._end_number == self._server_config["num_ends"] - 1:
-      color = Color.TEXT_END_MINUS1.value
-    elif self._end_number >= self._server_config["num_ends"] and not self._server_config["allow_overtime"]:
-      color = Color.TEXT_LASTEND.value
+    elif self.warning_level == 1:
+      color = Color.TEXT_WARNING_1.value
+    elif self.warning_level == 2:
+      color = Color.TEXT_WARNING_2.value
     else:
       color = Color.OT.value
 
