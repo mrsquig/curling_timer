@@ -166,3 +166,6 @@ cython_debug/
 
 # VS Code
 .vscode/
+
+# Failed application unit tests
+app_tests/*fail.png

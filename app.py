@@ -28,6 +28,7 @@ MESSAGE_TIME_LIMIT = 10
 MESSAGE_CHR_SOFT_LIMIT = 10
 MESSAGE_CHR_HARD_LIMIT = 20
 MESSAGE_LINE_LIMIT = 3
+WARNING_END_PERCENT = 0.334
 Color = None
 
 def timestamp():
@@ -160,6 +161,7 @@ class IceClock:
     self.fonts = {}
     self.fonts["timer"] = self.create_font(3, 16)
     self.fonts["last_end"] = self.create_font(2, 16)
+    self.fonts["warning"] = self.create_font(3, 32)
     self.fonts["end"] = self.create_font(1, 2)
     self.fonts["end_progress_label"] = self.create_font(1, 32)
     self.fonts["messages"] = self.create_font(3, 32)
@@ -208,12 +210,28 @@ class IceClock:
 
   @property
   def warning_level(self):
-    if self._end_number < self._server_config["num_ends"] - 1:
-      return None
-    elif self._end_number == self._server_config["num_ends"] - 1:
-      return 1
-    elif self._end_number >= self._server_config["num_ends"] and not self._server_config["allow_overtime"]:
-      return 2
+    uptime = self._uptime
+    end_number = self._end_number
+    game_type = self._server_config["game_type"]
+    num_ends = self._server_config["num_ends"]
+    time_per_end = self._server_config["time_per_end"]
+    allow_ot = self._server_config["allow_overtime"]
+
+    if game_type == "bonspiel":
+      if end_number < num_ends - 1:
+        return None
+      elif end_number == num_ends - 1:
+        return 1
+      elif end_number >= num_ends and not allow_ot:
+        return 2
+    elif game_type == "league":
+      if uptime < (num_ends - 2)*time_per_end + WARNING_END_PERCENT*time_per_end:
+        return None
+      elif uptime < (num_ends - 1)*time_per_end + WARNING_END_PERCENT*time_per_end:
+        return 1
+      elif end_number >= num_ends and not allow_ot:
+        return 2
+
     return -1
 
   def update_time(self):
@@ -269,8 +287,11 @@ class IceClock:
       text = self.fonts["last_end"].render("GAME OVER", True, color)
     elif self._server_config["game_type"] == "bonspiel" and self._uptime >= self._server_config["time_to_chime"]:
       text = self.fonts["last_end"].render("FINISH END +1", True, color)
-    elif is_last_end and not self._is_overtime:
-      text = self.fonts["last_end"].render("LAST END", True, color)
+    elif self.warning_level == 2 and not self._server_config["game_type"] == "bonspiel" and not self._is_overtime:
+      text = self.fonts["warning"].render("NO NEW ENDS", True, color)
+    elif self.warning_level == 1 and not self._server_config["game_type"] == "bonspiel" and not self._is_overtime:
+      msg = "FINISHED {:d}? PLAY {:d}".format(self._server_config["num_ends"]-2, self._server_config["num_ends"]-1)
+      text = self.fonts["warning"].render(msg, True, color)
     elif self._is_overtime:
       text = self.fonts["last_end"].render("OVERTIME", True, color)
     else:

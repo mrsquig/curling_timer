@@ -37,6 +37,7 @@ def render_app(clock, end_num, end_percentage):
     total_time = clock._server_config["count_in"]
     elapsed = 0
 
+  clock._uptime = elapsed
   clock._hours = int((total_time-elapsed) // 3600)
   clock._minutes = int(((total_time-elapsed) // 60) % 60)
   clock._seconds = int((total_time-elapsed) % 60)
@@ -75,7 +76,13 @@ class TestIceClock(unittest.TestCase):
       with open(golden_path, "wb") as outfile:
         outfile.write(img_io.getvalue())
       self.assertEqual(True, True)
-    self.assertImg(img_io, golden_path)
+
+    try:
+      self.assertImg(img_io, golden_path)
+    except AssertionError:
+      with open(os.path.splitext(golden_path)[0]+"_fail.png", "wb") as outfile:
+        outfile.write(img_io.getvalue())
+      self.assertEqual(True, False)
 
   @set_golden_path
   def test_first_end(self, golden_path=None):
@@ -99,13 +106,35 @@ class TestIceClock(unittest.TestCase):
   @set_golden_path
   def test_second_to_last(self, golden_path=None):
     end_num = server_config["num_ends"].value - 1
-    end_percentage = 0.5
+    end_percentage = 0.3
     img_io = render_app(self.clock, end_num, end_percentage)
     self.image_test(img_io, golden_path)
 
   @set_golden_path
   def test_last_end(self, golden_path=None):
     end_num = server_config["num_ends"].value
+    end_percentage = 0.3
+    img_io = render_app(self.clock, end_num, end_percentage)
+    self.image_test(img_io, golden_path)
+
+  @set_golden_path
+  def test_warning1(self, golden_path=None):
+    end_num = server_config["num_ends"].value - 1
+    end_percentage = 0.5
+    img_io = render_app(self.clock, end_num, end_percentage)
+    self.image_test(img_io, golden_path)
+
+  @set_golden_path
+  def test_warning2(self, golden_path=None):
+    end_num = server_config["num_ends"].value
+    end_percentage = 0.5
+    img_io = render_app(self.clock, end_num, end_percentage)
+    self.image_test(img_io, golden_path)
+
+  @set_golden_path
+  def test_warning1_6end(self, golden_path=None):
+    self.clock._server_config["num_ends"] = 6
+    end_num =  self.clock._server_config["num_ends"] - 1
     end_percentage = 0.5
     img_io = render_app(self.clock, end_num, end_percentage)
     self.image_test(img_io, golden_path)
