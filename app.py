@@ -225,9 +225,9 @@ class IceClock:
       elif end_number >= num_ends and not allow_ot:
         return 2
     elif game_type == "league":
-      if uptime < (num_ends - 2)*time_per_end + WARNING_END_PERCENT*time_per_end:
+      if uptime < (num_ends - 2)*time_per_end + int(WARNING_END_PERCENT*time_per_end):
         return None
-      elif uptime < (num_ends - 1)*time_per_end + WARNING_END_PERCENT*time_per_end:
+      elif uptime < (num_ends - 1)*time_per_end + int(WARNING_END_PERCENT*time_per_end):
         return 1
       elif end_number >= num_ends and not allow_ot:
         return 2

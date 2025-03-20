@@ -40,12 +40,12 @@
                         <input type="color" id="text_color" name="text_color" value={{styles.colors.TEXT}} />
                     </div>
                     <div class="form-group">
-                        <label for="text_end_minus1">Second to last end text color:</label>
-                        <input type="color" id="text_end_minus1" name="text_end_minus1" value={{styles.colors.TEXT_END_MINUS1}} />
+                        <label for="text_warning_1">First warning text color:</label>
+                        <input type="color" id="text_warning_1" name="text_warning_1" value={{styles.colors.TEXT_WARNING_1}} />
                     </div>
                     <div class="form-group">
-                        <label for="text_lastend">Last end text color:</label>
-                        <input type="color" id="text_lastend" name="text_lastend" value={{styles.colors.TEXT_LASTEND}} />
+                        <label for="text_warning_2">Second warning text color:</label>
+                        <input type="color" id="text_warning_2" name="text_warning_2" value={{styles.colors.TEXT_WARNING_2}} />
                     </div>
                 </div>
             </div>
@@ -94,11 +94,11 @@
         <h3 id="normal_header"></h3>
         <img id="generated_image" width="100%"> <br />
 
-        <h3 id="second_to_last_header"></h3>
-        <img id="generated_image_second_to_last_end" width="100%"><br />
+        <h3 id="warning_1_header"></h3>
+        <img id="generated_image_warning_1" width="100%"><br />
 
-        <h3 id="last_end_header"></h3>
-        <img id="generated_image_last_end" width="100%">
+        <h3 id="warning_2_header"></h3>
+        <img id="generated_image_warning_2" width="100%">
     </div>
 
     <script>
@@ -128,8 +128,8 @@
                             {
                                 'SCREEN_BG': hexToRgb(document.forms['styles_form']['screen_bg'].value),
                                 'TEXT': hexToRgb(document.forms['styles_form']['text_color'].value),
-                                'TEXT_END_MINUS1': hexToRgb(document.forms['styles_form']['text_end_minus1'].value),
-                                'TEXT_LASTEND': hexToRgb(document.forms['styles_form']['text_lastend'].value),
+                                'TEXT_WARNING_1': hexToRgb(document.forms['styles_form']['text_warning_1'].value),
+                                'TEXT_WARNING_2': hexToRgb(document.forms['styles_form']['text_warning_2'].value),
                                 'BAR_FG1': hexToRgb(document.forms['styles_form']['bar_fg1'].value),
                                 'BAR_FG2': hexToRgb(document.forms['styles_form']['bar_fg2'].value),
                                 'BAR_BG': hexToRgb(document.forms['styles_form']['bar_bg'].value),
@@ -188,19 +188,19 @@
                           document.getElementById("normal_header"),
                           "Normal style");
 
-            // Get the image for the second to last end
-            inputData["image_settings"]["image_type"] = "second_to_last";
+            // Get the image for the first warning
+            inputData["image_settings"]["image_type"] = "warning_1";
             get_style_img(inputData,
-                          document.getElementById('generated_image_second_to_last_end'),
-                          document.getElementById("second_to_last_header"),
-                          "Second to last end");
+                          document.getElementById('generated_image_warning_1'),
+                          document.getElementById("warning_1_header"),
+                          "Warning #1");
 
-            // Get the image for the last end
-            inputData["image_settings"]["image_type"] = "last";
+            // Get the image for the second warning
+            inputData["image_settings"]["image_type"] = "warning_2";
             get_style_img(inputData,
-                          document.getElementById('generated_image_last_end'),
-                          document.getElementById("last_end_header"),
-                          "Last end");
+                          document.getElementById('generated_image_warning_2'),
+                          document.getElementById("warning_2_header"),
+                          "Warning #2");
         }
         );
 

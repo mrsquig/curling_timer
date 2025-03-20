@@ -102,20 +102,21 @@ def style_preview():
 
   return render_template('style_preview.html', styles=styles)
 
-def get_style_image(end_num, styles):
+def get_style_image(end_num, styles, percent=0.25):
   import app
   img_io = io.BytesIO()
   clock = app.IceClock(headless=True, styles=styles)
   clock._server_config = {k: v.value for k,v in server_config.items()}
   total_time = server_config["time_per_end"].value * server_config["num_ends"].value
-  elapsed = server_config["time_per_end"].value * (end_num - 1) + 0.25 * server_config["time_per_end"].value
+  elapsed = server_config["time_per_end"].value * (end_num - 1) + percent * server_config["time_per_end"].value
 
   clock._hours = int((total_time-elapsed) // 3600)
   clock._minutes = int(((total_time-elapsed) // 60) % 60)
   clock._seconds = int((total_time-elapsed) % 60)
   clock._end_number = end_num
-  clock._end_percentage = 0.25
+  clock._end_percentage = percent
   clock._is_overtime = False
+  clock._uptime = elapsed
   clock.render_to_image(img_io)
 
   img_io.seek(0)
@@ -129,14 +130,17 @@ def style_img():
   styles["colors"] = {k: tuple(v) for k,v in styles["colors"].items()}
   if input_data["image_settings"]["image_type"] == "normal":
     end_num = 1
-  elif input_data["image_settings"]["image_type"] == "second_to_last":
+    end_percent = 0.25
+  elif input_data["image_settings"]["image_type"] == "warning_1":
     end_num = server_config["num_ends"].value - 1
-  elif input_data["image_settings"]["image_type"] == "last":
+    end_percent = 0.5
+  elif input_data["image_settings"]["image_type"] == "warning_2":
     end_num = server_config["num_ends"].value
+    end_percent = 0.5
   else:
     return jsonify({"error": "Invalid image type provided"}), 400
 
-  img_io = get_style_image(end_num, styles)
+  img_io = get_style_image(end_num, styles, percent = end_percent)
 
   return send_file(img_io, mimetype='image/png')
 
