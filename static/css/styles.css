@@ -186,3 +186,70 @@ input[type="color"] {
   border: 0px;
   height: 0px;
 }
+
+/* Popover Styles */
+.popover-button, .popover-button:hover {
+  background: transparent;
+  border: none !important;
+  margin: 2px;
+  padding: 0px;
+  color: #333;
+  vertical-align: super;
+}
+
+:popover-open {
+  min-width: 400px;
+  max-height: 80%;
+  padding: 10px;
+  border-radius: 8px;
+  position: fixed; 
+  top: 50%;
+  left: 50%;
+  /* Use transform to truly center the element based on its own dimensions */
+  transform: translate(-50%, -50%); 
+}
+
+::backdrop {
+  backdrop-filter: blur(3px);
+}
+
+/* Accordion Styles */
+.accordion-container {
+  padding: 5px;
+}
+
+.accordion {
+  background-color: #cfcfcf;
+  color: #444;
+  cursor: pointer;
+  padding: 18px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  outline: none;
+  transition: 0.4s;
+}
+
+.active, .accordion:hover {
+  background-color: #949494;
+}
+
+.panel {
+  padding: 5px 5px 0px 20px;
+  background-color: white;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.2s ease-out;
+}
+
+.accordion::after {
+  content: '\02795'; /* Unicode character for "plus" sign (+) */
+  font-size: 13px;
+  color: #707070;
+  float: right;
+  margin-left: 5px;
+}
+
+.active::after {
+  content: "\2796"; /* Unicode character for "minus" sign (-) */
+}
