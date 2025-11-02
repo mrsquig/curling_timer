@@ -1,0 +1,54 @@
+{
+  "colors": {
+    "SCREEN_BG": [
+      118,
+      187,
+      64
+    ],
+    "TEXT": [
+      0,
+      0,
+      0
+    ],
+    "TEXT_WARNING_1": [
+      0,
+      0,
+      0
+    ],
+    "TEXT_WARNING_2": [
+      0,
+      0,
+      0
+    ],
+    "BAR_FG1": [
+      255,
+      106,
+      0
+    ],
+    "BAR_FG2": [
+      255,
+      255,
+      255
+    ],
+    "BAR_BG": [
+      118,
+      187,
+      64
+    ],
+    "BAR_BORDER": [
+      0,
+      0,
+      0
+    ],
+    "BAR_DIVIDER": [
+      0,
+      0,
+      0
+    ]
+  },
+  "parameters": {
+    "color_every_nth": 2,
+    "divider_size": 5,
+    "bar_border_size": 5
+  }
+}
