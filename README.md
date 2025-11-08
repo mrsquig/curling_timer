@@ -85,6 +85,15 @@ Full-screen mode can be entered at run-time using the `--full-screen` flag (alte
 |q| Quit front end|
 |f| Toggle full screen|
 
+## Scheduler
+A scheduler using APScheduler is provided in `timer_scheduler.py`. Simply run to start the scheduler.
+
+```
+python timer_scheduler.py
+```
+
+Jobs created in the back end admin panel will not be started unless this process is running.
+
 ### Customizing the styles of the front end
 
 The colors of the front end elements can be customized by an optional style sheet file in JSON format. The style sheet is provided using the `--styles` or `-s` flag. The format of the file is a nested dictionary. The first is given by the key `colors` and is an un-ordered list of key/value pairs. The value of each element is a three-element list of red, green, and blue values which define the color. The second is a set of parameters, given by a dictionary with the key `parameters`.
