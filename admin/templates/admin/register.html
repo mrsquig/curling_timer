@@ -1,0 +1,74 @@
+{% extends "admin/base.html" %}
+{% block head %}
+  <title>Register - Curling timer</title>
+{% endblock %}
+{% block header %}
+  Register
+{% endblock %}
+{% block content %}
+    <div class="card">
+        <form method="post" action="{{ url_for('admin.add_user') }}">
+            <label for="full_name">Full Name:</label><br>
+            <input type="text" id="full_name" name="full_name" placeholder="Full Name" required><br><br>
+
+            <label for="email">Email:</label><br>
+            <input type="email" id="email" name="email" placeholder="Email" required><br><br>
+
+            <label for="username">Username:</label><br>
+            <input type="text" id="username" name="username" required><br><br>
+
+            <label for="password">Password:</label><br>
+            <input type="password" id="password" name="password" required><br><br>
+
+            <label for="confirm_password">Confirm Password:</label><br>
+            <input type="password" id="confirm_password" name="confirm_password" required><br><br>
+
+            <button type="submit" value="Register">Register</button>
+        </form>
+    </div>
+    <div class="card">
+        <h3>Password requirements</h3>
+        <ul id="password-requirements">
+            <li>At least 8 characters long</li>
+            <li>Contains both uppercase and lowercase letters</li>
+            <li>Includes at least one numerical digit</li>
+            <li>Has at least one special character (e.g., !, @, #, $, etc.)</li>
+        </ul>
+    </div>
+
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+
+            if (password !== confirmPassword) {
+                event.preventDefault();
+                alert('Passwords do not match. Please try again.');
+            }
+
+            if (password.length < 8 ||
+                !(/[a-z]/.test(password) && /[A-Z]/.test(password)) ||
+                !(/\d/.test(password)) ||
+                !(/[!@#$%^&*(),.?":{}|<>]/.test(password))) {
+                event.preventDefault();
+                alert('Password does not meet the required criteria. Please check the password requirements.');
+            }
+        });
+
+        form.addEventListener('input', function() {
+            const password = document.getElementById('password').value;
+            const requirementsList = document.getElementById('password-requirements');
+            const requirements = requirementsList.getElementsByTagName('li');
+
+            // Check each requirement
+            requirements[0].style.color = password.length >= 8 ? 'green' : 'red';
+            requirements[1].style.color = /[a-z]/.test(password) && /[A-Z]/.test(password) ? 'green' : 'red';
+            requirements[2].style.color = /\d/.test(password) ? 'green' : 'red';
+            requirements[3].style.color = /[!@#$%^&*(),.?":{}|<>]/.test(password) ? 'green' : 'red';
+        });
+    });
+</script>
+{% endblock %}
+{% block back_button %}{% endblock %}

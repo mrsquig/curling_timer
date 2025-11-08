@@ -1,0 +1,103 @@
+{% extends 'admin/base.html' %}
+
+{% block head %}
+  <title>Modify Profiles - Curling timer</title>
+{% endblock %}
+
+{% block header %}
+  Modify Profiles
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Current profiles</h2>
+        <table style="width:100%; text-align: justify;">
+            <thead>
+            <tr>
+                <th>Profile Name</th>
+                <th>Time per end (seconds)</th>
+                <th>Number of ends</th>
+                <th>Count direction</th>
+                <th>Allow overtime</th>
+                <th>Stones per end</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+        {% for name, profile in profiles.items() %}
+            <tr>
+                <form method="post" style="display:inline;">
+                <td>
+                    <p class="mobile-label">Profile name</p>
+                    <input name="name" value="{{ name }}" required>
+                </td>
+                <td>
+                    <p class="mobile-label">Time per end (seconds)</p>
+                    <input name="time_per_end" type="number" value="{{ profile['time_per_end'] }}" required>
+                </td>
+                <td>
+                    <p class="mobile-label">Number of ends</p>
+                    <input name="num_ends" type="number" value="{{ profile['num_ends'] }}" required>
+                </td>
+                <td>
+                    <p class="mobile-label">Count direction</p>
+                    <select name="count_direction" required>
+                        <option value="down" {% if profile["count_direction"] == -1 %}selected{% endif %}>Down</option>
+                        <option value="up" {% if profile["count_direction"] == 1 %}selected{% endif %}>Up</option>
+                    </select>
+                </td>
+                <td>
+                    <p class="mobile-label">Allow overtime</p>
+                    <select name="allow_overtime" required>
+                        <option value="no" {% if not profile["allow_overtime"] %}selected{% endif %}>No</option>
+                        <option value="yes" {% if profile["allow_overtime"] %}selected{% endif %}>Yes</option>
+                    </select>
+                </td>
+                <td>
+                    <p class="mobile-label">Stones per end</p>
+                    <input name="stones_per_end" type="number" value="{{ profile['stones_per_end'] }}" required>
+                </td>
+                <td>
+                    <p class="mobile-label">Description</p>
+                    <input name="description" value="{{ profile['description'] }}">
+                </td>
+        <td>
+            <input name="action" type="hidden" value="edit">
+            <input name="original_name" type="hidden" value="{{ name }}">
+            <button type="submit">Edit Profile</button>
+            </form>
+            <form method="post" style="display:inline;">
+            <input name="action" type="hidden" value="delete">
+            <input name="original_name" type="hidden" value="{{ name }}">
+            <button type="submit" style="background-color: red;">Delete Profile</button>
+            </form>
+        </td>
+    </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+<div class="card">
+    <h2>Add new profile</h2>
+    <form name="add_profile" method="post">
+        <input name="action" type="hidden" value="add">
+        <input name="name" placeholder="Profile Name" required><br>
+        <input name="time_per_end" type="number" placeholder="Time per end (seconds)" required><br>
+        <input name="num_ends" type="number" placeholder="Number of ends" required><br>
+        <select name="count_direction" required>
+            <option value="" disabled selected>Count Direction</option>
+            <option value="down">Down</option>
+            <option value="up">Up</option>
+        </select><br>
+        <select name="allow_overtime" required>
+            <option value="" disabled selected>Allow Overtime</option>
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+        </select><br>
+        <input name="stones_per_end" type="number" placeholder="Stones per end" required><br>
+        <input name="description" placeholder="Description"><br>
+        <button type="submit">Add Profile</button>
+    </form>
+</div>
+{% endblock %}

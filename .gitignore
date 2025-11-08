@@ -169,3 +169,5 @@ cython_debug/
 
 # Failed application unit tests
 app_tests/*fail.png
+
+*db

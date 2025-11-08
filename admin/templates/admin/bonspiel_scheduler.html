@@ -1,0 +1,123 @@
+{% extends 'admin/base.html' %}
+
+{% block head %}
+  <title>Bonspiel Scheduler - Curling timer</title>
+{% endblock %}
+
+{% block header %}
+  Bonspiel Scheduler
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Current jobs</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>Bonspiel name</th>
+                <th>Start date</th>
+                <th>End date</th>
+                <th>Settings Profile</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+      {% for job in jobs %}
+            <tr>
+            <form method="post" style="display:inline;">
+                <td>{{ job["id"] }}</td>
+                <td>
+                    <p class="mobile-label">Start date</p>
+                    <input type="datetime-local" id="start_datetime" name="start_datetime" value="{{ job['start_dt'].strftime('%Y-%m-%dT%H:%M') }}" required><br>
+                </td>
+                <td>
+                  <p class="mobile-label">End date</p>
+                    <input type="datetime-local" id="end_datetime" name="end_datetime" value="{{ job['end_dt'].strftime('%Y-%m-%dT%H:%M') }}" required><br>
+                </td>
+                <td>
+                  <p class="mobile-label">Settings Profile</p>
+                    <table>
+                        <tr>
+                            <td>Time to Chime (seconds):<br>
+                            <input name="time_to_chime" type="number" value="{{ job['time_to_chime'] }}"  required></td>
+                        </tr>
+                        <tr>
+                            <td>Time per End (seconds):<br>
+                            <input name="time_per_end" type="number" value="{{ job['time_per_end'] }}" required></td>
+                        </tr>
+                        <tr>
+                            <td>Stones per End:<br>
+                            <input name="stones_per_end" type="number" value="{{ job['stones_per_end'] }}" required></td>
+                        </tr>
+                        <tr>
+                            <td>Timer Count In (seconds):<br>
+                            <input name="timer_count_in" type="number" value="{{ job['timer_count_in'] }}" required></td>
+                        </tr>
+                        <tr>
+                            <td>Allow Overtime:<br>
+                            <input type="checkbox" id="allow_ot" name="allow_ot" {% if job['allow_ot'] %}checked{% endif %}>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Count Direction:<br>
+                                <select id="count_direction" name="count_direction" required>
+                                    <option value="down" {% if job['count_direction'] == 'down' %}selected{% endif %}>Down</option>
+                                    <option value="up" {% if job['count_direction'] == 'up' %}selected{% endif %}>Up</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </table>
+                <td>
+            <input name="action" type="hidden" value="edit">
+            <input name="job_id" type="hidden" value="{{ job['id'] }}">
+            <button type="submit">Edit</button>
+          </form>
+          <form method="post" style="display:inline;">
+            <input name="action" type="hidden" value="delete">
+            <input name="job_id" type="hidden" value="{{ job['id'] }}">
+            <button type="submit" style="background-color: red;">Delete</button>
+          </form>
+        </td>
+    </tr>
+      {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<div class="card">
+    <h2>Schedule a New Bonspiel</h2>
+    <form method="post" action="{{ url_for('admin.manage_bonspiel_schedule') }}">
+        <input type="hidden" name="action" value="add">
+        <label for="job_id">Bonspiel Name:</label><br>
+        <input type="text" id="job_id" name="job_id" placeholder="Enter bonspiel name" required><br>
+
+        <label for="start_datetime">Start Date and time:</label><br>
+        <input type="datetime-local" id="start_datetime" name="start_datetime" required><br>
+        <label for="end_datetime">End Date and time:</label><br>
+        <input type="datetime-local" id="end_datetime" name="end_datetime" required><br>
+
+        <label for="time_to_chime">Time to Chime (seconds):</label><br>
+        <input type="number" id="time_to_chime" name="time_to_chime" value="6000" required><br>
+
+        <label for="time_per_end">Time per End (seconds):</label><br>
+        <input type="number" id="time_per_end" name="time_per_end" value="900" required><br>
+
+        <label for="stones_per_end">Stones per End:</label><br>
+        <input type="number" id="stones_per_end" name="stones_per_end" value="8" required><br>
+
+        <label for="timer_count_in">Timer Count In (seconds):</label><br>
+        <input type="number" id="timer_count_in" name="timer_count_in" value="0" required><br>
+
+        <label for="allow_ot">Allow Overtime:</label>
+        <input type="checkbox" id="allow_ot" name="allow_ot"><br>
+
+        <label for="count_direction">Count Direction:</label>
+        <select id="count_direction" name="count_direction" required>
+            <option value="down">Down</option>
+            <option value="up">Up</option>
+        </select><br>
+
+        <button type="submit" value="Schedule Bonspiel">Schedule Bonspiel</button>
+    </form>
+</div>
+{% endblock %}

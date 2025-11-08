@@ -1,0 +1,33 @@
+{% extends "admin/base.html" %}
+{% block head %}
+  <title>Admin Home - Curling timer</title>
+{% endblock %}
+{% block header %}
+  Admin Home
+{% endblock %}
+{% block content %}
+<div class="card">
+{% if 'session_id' in session and session['session_id'] in active_sessions %}
+    <p>Welcome, <b>{{ active_sessions[session['session_id']]['username'] }}</b></p>
+    <ul>
+    <li><a href="{{ url_for('admin.change_password') }}">Change Password</a></li>
+    {% for page in pages %}
+        <li><a href="{{ url_for(page.endpoint) }}">{{ page.name }}</a></li>
+    {% endfor %}
+    </ul>
+    <form action="{{ url_for('admin.logout') }}">
+    <button type="submit" value="Logout">Logout</button>
+    </form>
+{% else %}
+    <form action="{{ url_for('admin.login') }}" method="post">
+    <input name="username" placeholder="Username" required><br>
+    <input name="password" type="password" placeholder="Password" required><br>
+    {% if next %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {% endif %}
+    <button type="submit" value="Login">Login</button>
+    </form>
+{% endif %}
+</div>
+{% endblock %}
+{% block back_button %}{% endblock %}
