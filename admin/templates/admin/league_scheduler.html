@@ -4,6 +4,10 @@
 {% endblock %}
 {% block header %}
   League Scheduler
+  <button class="popover-button" popovertarget="help-popover">
+      <img src="{{ url_for('static', filename='images/circle-info.svg') }}"
+          alt="Timer help" height="20" width="20" />
+  </button>
 {% endblock %}
 {% block content %}
   <div class="card">
@@ -97,5 +101,9 @@
         </select><br>
         <button type="submit" value="Add Job">Add Job</button>
       </form>
+  </div>
+
+  <div popover id="help-popover">
+    {% include 'partials/timer_help.html' %}
   </div>
 {% endblock %}

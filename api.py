@@ -31,7 +31,7 @@ app = Flask(__name__)
 app.register_blueprint(admin, url_prefix='/admin')
 
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'fallback-dev-key')
-app.permanent_session_lifetime = timedelta(minutes=5)
+app.permanent_session_lifetime = timedelta(hours=24)
 
 # Cookie security settings
 app.config.update(
