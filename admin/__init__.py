@@ -4,6 +4,7 @@ from enum import Enum
 import os
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.background import BackgroundScheduler
+import json
 
 DATABASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app.db'))
 
@@ -14,7 +15,6 @@ jobstores = {
   }
 scheduler = BackgroundScheduler(jobstores=jobstores)
 scheduler.start(paused=True)
-
 
 class Permissions(Enum):
   MANAGE_USERS             = 0b000000000001
@@ -43,9 +43,60 @@ def load_profiles(db_path):
   cursor.execute("SELECT name, time_per_end, num_ends, count_direction, allow_overtime, stones_per_end, description FROM server_profiles")
   rows = cursor.fetchall()
   if not rows:
-    cursor.execute("INSERT INTO server_profiles (name, time_per_end, num_ends, count_direction, allow_overtime, stones_per_end, description) VALUES (?, ?, ?, ?, ?, ?, ?)",("8ends", 900, 8, -1, 0, 8, "Standard 8 end game."))
-    cursor.execute("INSERT INTO server_profiles (name, time_per_end, num_ends, count_direction, allow_overtime, stones_per_end, description) VALUES (?, ?, ?, ?, ?, ?, ?)",("6ends", 900, 6, -1, 0, 8, "Standard 6 end game."))
-    cursor.execute("INSERT INTO server_profiles (name, time_per_end, num_ends, count_direction, allow_overtime, stones_per_end, description) VALUES (?, ?, ?, ?, ?, ?, ?)",("doubles", 675, 8, -1, 0, 5, "Standard 8 end doubles game."))
+    # Load the profiles from the file if it exists
+    default_profile_path = "server_profiles.json"
+    default_profiles = OrderedDict()
+    if os.path.exists(default_profile_path):
+      allowed_keys = ("name", "time_per_end", "num_ends", "count_direction", "allow_overtime", "stones_per_end", "description")
+      with open(default_profile_path, 'r') as f:
+        loaded_profiles = json.load(f)
+
+        # Copy loaded profiles into default profiles dictionary
+        for profile in loaded_profiles:
+          default_profiles[profile] = loaded_profiles[profile]
+
+      # Remove forbidden keys from the profiles
+      for profile in default_profiles:
+        for key in default_profiles[profile].keys():
+          if not (key in allowed_keys):
+            del default_profiles[profile][key]
+    else:
+      default_profiles["8ends"] = {
+          "time_per_end": 900,
+          "num_ends": 8,
+          "count_direction": -1,
+          "allow_overtime": False,
+          "stones_per_end": 8,
+          "description": "Standard 8-end game with 15 minutes per end."
+      }
+      default_profiles["6ends"] = {
+          "time_per_end": 900,
+          "num_ends": 6,
+          "count_direction": -1,
+          "allow_overtime": False,
+          "stones_per_end": 8,
+          "description": "Standard 6-end game with 15 minutes per end."
+      }
+      default_profiles["doubles"] = {
+          "time_per_end": 675,
+          "num_ends": 8,
+          "count_direction": -1,
+          "allow_overtime": False,
+          "stones_per_end": 5,
+          "description": "Standard doubles game with 11.25 minutes per end and 5 stones per end."
+      }
+
+    for profile_name, profile in default_profiles.items():
+      cursor.execute("INSERT INTO server_profiles (name, time_per_end, num_ends, count_direction, allow_overtime, stones_per_end, description) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                     (profile_name,
+                      profile.get("time_per_end", 900),
+                      profile.get("num_ends", 8),
+                      profile.get("count_direction", -1),
+                      int(profile.get("allow_overtime", 0)),
+                      profile.get("stones_per_end", 8),
+                      profile.get("description", "")
+                     ))
+
     cursor.execute("SELECT name, time_per_end, num_ends, count_direction, allow_overtime, stones_per_end, description FROM server_profiles")
     rows = cursor.fetchall()
     conn.commit()
