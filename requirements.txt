@@ -2,3 +2,5 @@ flask
 pygame
 requests
 waitress
+SQLAlchemy
+APScheduler

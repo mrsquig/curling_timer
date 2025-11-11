@@ -18,6 +18,8 @@ python api.py
 
 The server will start with Waitress if installed, or the Flask development server otherwise. A simple web utility is provided at the root of the server for controlling the configuration of the timer. The host to bind to can be specified with the `--host` flag, and the port with the `--port` flag. The defaults are `0.0.0.0` and `5000`. The value of `0.0.0.0` for the host IP allows any device on the network to communicate with the server.
 
+A database will be created in the top-level directory of the repository called `app.db`. This database is used by the back end to store users, timer profiles, and scheduling.
+
 The following API routes are supported:
 
 |Name|Request Type|Notes|
@@ -57,6 +59,16 @@ The `times` dictionary uses the following data structure:
 Preset profiles can be defined via a JSON file. The default file is named `server_profiles.json` and a customized file path can be
 specified via the `--profiles` flag.
 
+## Back end admin panel
+
+The timer admin panel can be accessed via `/admin`. For example: `http://127.0.0.1:5000/admin`. Users may register for the admin panel by navigating to `/admin/register`. The first users to be added to the database has all permissions. Subsequent users have no permissions and must be granted permissions. The permission system allows for individual control for the following actions:
+
+- Manage users
+- Manage league scheduling
+- Manage bonspiel scheduling
+- Manage timer profiles
+- View timer schedule
+
 ## Front end
 An example PyGame front end is provided in `app.py` Simply run to start the front end.
 
@@ -73,6 +85,15 @@ Full-screen mode can be entered at run-time using the `--full-screen` flag (alte
 |q| Quit front end|
 |f| Toggle full screen|
 
+## Scheduler
+A scheduler using APScheduler is provided in `timer_scheduler.py`. Simply run to start the scheduler.
+
+```
+python timer_scheduler.py
+```
+
+Jobs created in the back end admin panel will not be started unless this process is running.
+
 ### Customizing the styles of the front end
 
 The colors of the front end elements can be customized by an optional style sheet file in JSON format. The style sheet is provided using the `--styles` or `-s` flag. The format of the file is a nested dictionary. The first is given by the key `colors` and is an un-ordered list of key/value pairs. The value of each element is a three-element list of red, green, and blue values which define the color. The second is a set of parameters, given by a dictionary with the key `parameters`.
@@ -80,7 +101,7 @@ The colors of the front end elements can be customized by an optional style shee
 An example is as follows,
 
 ```json
-{ 
+{
     "colors":
     {
         "SCREEN_BG": [127, 127, 127],

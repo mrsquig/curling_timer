@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  {% block head %}
+  {% endblock %}
+</head>
+<body>
+  <h1>{% block header %}{% endblock %}</h1>
+  <div class="flex-container">
+    <div class="flex-item">
+      {% block flash_messages %}
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="card">
+            <ul>{% for message in messages %}<li>{{ message }}</li>{% endfor %}</ul>
+          </div>
+        {% endif %}
+      {% endwith %}
+      {% endblock %}
+
+      {% block content %}
+      {% endblock %}
+
+      {% block back_button %}
+        <div class="card">
+          <form action="{{ url_for('admin.index') }}">
+            <button type="submit" value="Back">Back</button>
+          </form>
+        </div>
+      {% endblock %}
+    </div>
+  </div>
+</body>
+</html>

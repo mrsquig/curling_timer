@@ -2,6 +2,9 @@ from flask import Flask, jsonify, request, render_template, send_file
 from datetime import datetime
 from config import ConfigValue, bool_type
 from collections import OrderedDict
+from admin.views import admin
+from admin import load_profiles, DATABASE_PATH
+from datetime import timedelta
 import copy
 import json
 import argparse
@@ -9,6 +12,7 @@ import time
 import sys
 import os
 import io
+import sqlite3
 
 try:
   USING_WAITRESS = True
@@ -24,6 +28,19 @@ def timestamp():
   return datetime.now().timestamp()
 
 app = Flask(__name__)
+app.register_blueprint(admin, url_prefix='/admin')
+
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'fallback-dev-key')
+app.permanent_session_lifetime = timedelta(hours=24)
+
+# Cookie security settings
+app.config.update(
+    SESSION_COOKIE_DOMAIN=None,     # auto-selects based on the request host
+    SESSION_COOKIE_SECURE=False,    # disable if using plain HTTP
+    SESSION_COOKIE_SAMESITE='Lax',  # allows normal same-site requests
+    SESSION_COOKIE_HTTPONLY=True,   # prevents JavaScript access
+)
+
 server_config = {
     "version": ConfigValue(0.1),
     "time_per_end": ConfigValue(15*60, int),
@@ -82,7 +99,8 @@ def index():
       update_config("count_in", request.form.get("count_in"))
 
   data = {key: value.value for key,value in server_config.items()}
-  data["profiles"] = PROFILES.keys()
+  profiles = load_profiles(DATABASE_PATH)
+  data["profiles"] = profiles.keys()
   data["selected_profile_name"] = request.form.get('profile_name', None)
 
   response, status = get_times()
@@ -323,7 +341,8 @@ def load_profile():
   if not name:
     return jsonify({"error": "Profile name not specified"}), 400
 
-  if name not in PROFILES:
+  profiles = load_profiles(DATABASE_PATH)
+  if name not in profiles:
     return jsonify({"error": "Profile not found"}), 400
 
   update_config_with_profile(name)
@@ -332,14 +351,15 @@ def load_profile():
 @app.route('/get_profile_description', methods=['POST'])
 def get_profile_description():
   profile_name = request.get_json()
+  profiles = load_profiles(DATABASE_PATH)
 
   if not profile_name:
     return jsonify({"error": "Profile name not specified"}), 400
 
-  if profile_name not in PROFILES:
+  if profile_name not in profiles:
     return jsonify({"error": "Profile not found"}), 400
 
-  return jsonify({"description": PROFILES[profile_name]["description"]}), 200
+  return jsonify({"description": profiles[profile_name]["description"]}), 200
 
 @app.route('/messages', methods=['GET'])
 def get_messages():
@@ -374,7 +394,8 @@ def cycle_profile():
     logger.warning("Cannot cycle profile while timer is running")
     return jsonify({key: server_config[key].value for key in server_config}), 200
 
-  profile_names = list(PROFILES.keys())
+  profiles = load_profiles(DATABASE_PATH)
+  profile_names = list(profiles.keys())
   if PROFILE_ID >= len(profile_names):
     PROFILE_ID = 0
 
@@ -384,13 +405,14 @@ def cycle_profile():
   return jsonify({key: server_config[key].value for key in server_config}), 200
 
 def update_config_with_profile(profile_name):
-  if profile_name not in PROFILES:
+  profiles = load_profiles(DATABASE_PATH)
+  if profile_name not in profiles:
     return
 
-  for key in PROFILES[profile_name]:
+  for key in profiles[profile_name]:
     if key == "description":
       continue
-    server_config[key].value = PROFILES[profile_name][key]
+    server_config[key].value = profiles[profile_name][key]
 
 def adjust_timer(direction, minutes):
   if not minutes:
@@ -426,25 +448,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument("--host", default="0.0.0.0", help="host IP to bind to")
   parser.add_argument("--port", default="5000", type=int, help="port for server to listen on")
-  parser.add_argument("--profiles", default="server_profiles.json", help="file to read profiles from")
   args = parser.parse_args()
-
-  # Load the profiles from the file if it exists
-  if os.path.exists(args.profiles):
-    forbidden_keys = ("version", "is_timer_running", "start_timestamp", "stop_timestamp",
-                      "timer_stop_uptime", "is_game_complete")
-    with open(args.profiles, 'r') as f:
-      loaded_profiles = json.load(f)
-
-      # Copy loaded profiles into the PROFILES dictionary
-      for profile in loaded_profiles:
-        PROFILES[profile] = loaded_profiles[profile]
-
-    # Remove forbidden keys from the profiles
-    for profile in PROFILES:
-      for key in forbidden_keys:
-        if key in profile:
-          del profile[key]
 
   if USING_WAITRESS:
     waitress.serve(app, host='0.0.0.0', port=args.port)

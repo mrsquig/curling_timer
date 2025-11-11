@@ -1,0 +1,74 @@
+{% extends 'admin/base.html' %}
+{% block head %}
+  <title>Modify Users - Curling timer</title>
+{% endblock %}
+{% block header %}
+  Modify Users
+{% endblock %}
+{% block content %}
+<div class="card">
+    <h2>Current users</h2>
+        <table style="width:100%; text-align: justify;">
+            <thead>
+            <tr>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Username</th>
+                <th>Permissions</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+        {% for user in users %}
+            <tr>
+                <form method="post" style="display:inline;">
+                <td>{{ user["full_name"] }}</td>
+                <td>{{ user["email"] }}</td>
+                <td>{{ user["username"] }}</td>
+                <td>
+                    <table class="permissions-table">
+                    <colgroup>
+                        <col style="width: 80%;">
+                        <col style="width: 20%;">
+                    </colgroup>
+                    {% for permission in user["permissions"] %}
+                    <tr>
+                        <td>{{ permission }}</td>
+                        {% set perm_field = permission.replace(' ', '_').upper() %}
+                        <td><input type="checkbox" name="{{ perm_field }}" {% if user["permissions"][permission] %}checked{% endif %} style="display: inline; width:auto;"></td>
+                    </tr>
+                    {% endfor %}
+                    </table>
+                </td>
+        <td>
+            <input name="action" type="hidden" value="edit">
+            <input name="user_id" type="hidden" value="{{ user['id'] }}">
+            <button type="submit">Edit User</button>
+            </form>
+            <form method="post" style="display:inline;">
+            <input name="action" type="hidden" value="delete">
+            <input name="user_id" type="hidden" value="{{ user['id'] }}">
+            <button type="submit" style="background-color: red;">Delete User</button>
+            </form>
+        </td>
+    </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+<div class="card">
+    <h2>Add new user</h2>
+    <form name="add_user" method="post">
+        <input name="action" type="hidden" value="add">
+        <label for="full_name">Full Name:</label><br>
+        <input name="full_name" placeholder="Full Name" required><br>
+        <label for="email">Email:</label><br>
+        <input name="email" type="email" placeholder="Email" required><br>
+        <label for="username">Username:</label><br>
+        <input name="username" placeholder="Username" required><br>
+        <label for="password">Password:</label><br>
+        <input name="password" type="password" placeholder="Password" required><br>
+        <button type="submit" value="Add User">Add User</button>
+    </form>
+</div>
+{% endblock %}

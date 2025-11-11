@@ -1,0 +1,33 @@
+{% extends 'admin/base.html' %}
+
+{% block head %}
+  <title>View Schedule - Curling timer</title>
+{% endblock %}
+
+{% block header %}
+  View Schedule
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Current Schedule</h2>
+        <table style="width:100%; text-align: justify;">
+            <thead>
+            <tr>
+                <th>Job Name</th>
+                <th>Start Time</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+            <tbody>
+        {% for job in jobs %}
+            <tr>
+                <td>{{ job['id'] }}</td>
+                <td>{{ job['next_run_time'].strftime('%A, %B %d, %Y at %I:%M %p') }}</td>
+                <td>{{ job['description'] }}</td>
+            </tr>
+        {% endfor %}
+            </tbody>
+        </table>
+</div>
+{% endblock %}

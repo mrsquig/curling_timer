@@ -55,6 +55,92 @@ header, footer {
   padding: 20px;
 }
 
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  text-align: justify;
+}
+
+td input, td select {
+  width: 90%;
+}
+
+tbody tr:first-of-type {
+  border-top: 2px solid black;
+}
+
+tbody tr:last-of-type {
+  border-bottom: 2px solid black;
+}
+
+tr {
+  border-bottom: 1px solid #555;
+  border-top: 1px solid #555;
+}
+
+.card {
+  padding: 15px;
+  margin: 10px;
+}
+
+td, th {
+  padding: 8px;
+}
+
+td select, td input {
+  width: 100%;
+  padding: 8px;
+  margin: 4px 0;
+}
+
+.mobile-label {
+  display: none;
+  font-weight: bold;
+}
+
+@media screen and (max-width: 768px) {
+  .mobile-label {
+    display: block;
+    font-weight: bold;
+  }
+
+  table, thead, tbody, th, td, tr {
+    display: block;
+  }
+
+  thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  tr {
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+  }
+
+  td {
+    border: none;
+    position: relative;
+  }
+
+  td:before {
+    position: absolute;
+    left: 6px;
+    width: 45%;
+    padding-right: 10px;
+    white-space: nowrap;
+    content: attr(data-label);
+    font-weight: bold;
+  }
+
+  .permissions-table td {
+    display: inline;
+  }
+}
+
 /* Flexbox for Layout */
 .flex-container {
   display: flex;
@@ -202,11 +288,11 @@ input[type="color"] {
   max-height: 80%;
   padding: 10px;
   border-radius: 8px;
-  position: fixed; 
+  position: fixed;
   top: 50%;
   left: 50%;
   /* Use transform to truly center the element based on its own dimensions */
-  transform: translate(-50%, -50%); 
+  transform: translate(-50%, -50%);
 }
 
 ::backdrop {

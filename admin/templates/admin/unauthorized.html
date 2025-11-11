@@ -1,0 +1,15 @@
+{% extends "admin/base.html" %}
+{% block head %}
+  <title>Unauthorized Access - Curling timer</title>
+{% endblock %}
+{% block header %}
+  Unauthorized Access
+{% endblock %}
+{% block flash_messages %}{% endblock %}
+{% block content %}
+<div class="card">
+    <p>You do not have permission to access this page.</p>
+    <a href="{{ url_for('index') }}">Return to main page</a>
+</div>
+{% endblock %}
+{% block back_button %}{% endblock %}
