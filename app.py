@@ -181,7 +181,10 @@ class IceClock:
       return
 
     # Check if the styles file has been updated since last read
-    if os.path.getmtime(self.styles_path) == self.last_read_styles:
+    stat_info = os.lstat(self.styles_path)
+    if (self.last_read_styles is not None and
+          (stat_info.st_ctime <= self.last_read_styles or
+           stat_info.st_mtime <= self.last_read_styles)):
       return
 
     # Read the styles from the file
