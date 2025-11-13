@@ -68,6 +68,8 @@ The timer admin panel can be accessed via `/admin`. For example: `http://127.0.0
 - Manage bonspiel scheduling
 - Manage timer profiles
 - View timer schedule
+- Upload new style sheets
+- Change the current style sheet
 
 ## Front end
 An example PyGame front end is provided in `app.py` Simply run to start the front end.
@@ -84,6 +86,8 @@ Full-screen mode can be entered at run-time using the `--full-screen` flag (alte
 |r| Reset timer|
 |q| Quit front end|
 |f| Toggle full screen|
+
+If the `--style` argument is specified when starting the front end, then the style sheet cannot be modified by the admin back end. Use this option if you would like to lock the style sheet to a single file. Otherwise, do not specify the style argument.
 
 ## Scheduler
 A scheduler using APScheduler is provided in `timer_scheduler.py`. Simply run to start the scheduler.
