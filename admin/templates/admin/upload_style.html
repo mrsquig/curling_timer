@@ -1,0 +1,44 @@
+{% extends "admin/base.html" %}
+
+{% block head %}
+  <title>Upload Style - Curling timer</title>
+  <style>
+    .flex-container {
+        display: inherit;
+    }
+    .form-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .form-group label {
+        flex: 0 0 250px; /* Fixed width for labels */
+    }
+    .form-group input {
+        flex: 1;
+    }
+    .color_picker {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block header %}
+  Upload Style
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <form method="post" action="{{ url_for('admin.upload_styles') }}" enctype="multipart/form-data">
+        <label for="style_file">Select style file to upload:</label><br>
+        <input type="text" name="style_name" placeholder="Style Name" required>
+        <input type="file" id="style_file" name="style_file" accept=".json" required><br>
+        <button type="submit" value="Upload Style">Upload Style</button>
+    </form>
+</div>
+
+{% include 'partials/style_preview_content.html' %}
+
+{% endblock %}
