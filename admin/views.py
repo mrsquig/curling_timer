@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from apscheduler.triggers.cron import CronTrigger
 from urllib.parse import urlparse, urljoin
 from . import load_profiles, Permissions, DATABASE_PATH, scheduler, jobstores
+import json
+import copy
 
 admin = Blueprint('admin', __name__, template_folder="templates")
 
@@ -47,7 +49,17 @@ def index():
     if next_url and not is_safe_url(next_url):
         next_url = None
 
+    display_order = [
+        Permissions.MANAGE_USERS,
+        Permissions.MANAGE_PROFILES,
+        Permissions.MANAGE_LEAGUE_SCHEDULE,
+        Permissions.MANAGE_BONSPIEL_SCHEDULE,
+    ]
     for perm in Permissions:
+      if perm not in display_order:
+        display_order.append(perm)
+
+    for perm in display_order:
         if check_permissions(perm):
             pages.append({
                 "endpoint": "admin.{:s}".format(perm.name.lower()),
@@ -641,6 +653,67 @@ def add_user():
   conn.close()
   flash('User registered successfully! You can now log in.')
   return redirect(url_for('admin.index'))
+
+@admin.route('/upload_styles', methods=['GET', 'POST'])
+@protected_route
+def upload_styles():
+  if not check_permissions(Permissions.UPLOAD_STYLES):
+    return redirect(url_for('admin.unauthorized'))
+
+  from app import load_default_styles
+  # load_default_styles is cached, so we need to make a copy of the returned value
+  # to avoid modifying the original
+  styles = copy.deepcopy(load_default_styles())
+
+  for style in styles["colors"]:
+    styles["colors"][style] = "#{:02x}{:02x}{:02x}".format(*styles["colors"][style])
+
+
+  if request.method == 'POST':
+    style_name = request.form['style_name']
+    style_name = style_name.strip().replace(" ", "_").lower()
+    file_data = request.files['style_file']
+    if file_data:
+      styles_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', 'app_styles')
+      if not os.path.exists(styles_dir):
+        os.makedirs(styles_dir)
+
+      file_path = os.path.join(styles_dir, "{:s}.json".format(style_name))
+      style_json = file_data.read().decode('utf-8')
+      style = json.loads(style_json)
+
+      allowed_keys = ("colors", "parameters")
+      for key in style.keys():
+        if not (key in allowed_keys):
+          del style[key]
+
+      with open(file_path, 'w') as outfile:
+        json.dump(style, outfile, indent=4)
+      flash('Style uploaded successfully!')
+    else:
+      flash('No file selected for upload.')
+  return render_template("admin/upload_style.html", styles=styles)
+
+@admin.route('/change_styles', methods=['GET', 'POST'])
+@protected_route
+def change_styles():
+  if not check_permissions(Permissions.CHANGE_STYLES):
+    return redirect(url_for('admin.unauthorized'))
+
+  styles_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', 'app_styles')
+  style_files = os.listdir(styles_dir) if os.path.exists(styles_dir) else []
+  style_files = filter(lambda f: f.endswith('.json') and not os.path.islink(os.path.join(styles_dir, f)), style_files)
+
+  if request.method == 'POST':
+    selected_style = request.form['style_file']
+
+    file_path = os.path.join(styles_dir, "{:s}.json".format(selected_style))
+    tmp_name = "{:s}_tmp.json".format(str(uuid.uuid4()))
+    os.symlink(file_path, os.path.join(styles_dir, tmp_name))
+    os.replace(os.path.join(styles_dir, tmp_name), os.path.join(styles_dir, "user_styles.json"))
+    flash('Style changed successfully!')
+
+  return render_template("admin/change_styles.html", style_files=[os.path.splitext(f)[0] for f in style_files])
 
 @admin.route('/logout')
 def logout():

@@ -17,11 +17,17 @@ scheduler = BackgroundScheduler(jobstores=jobstores)
 scheduler.start(paused=True)
 
 class Permissions(Enum):
+  # Note: do not change existing permission values as they may be in use
+  # If you wish to add new permissions, add them to the end
+  # If you need to remove a permission, just mark it as deprecated but keep the value
+  # If you want to change the order that pages are displayed in the admin panel, change the order in the UI code, not here
   MANAGE_USERS             = 0b000000000001
   MANAGE_LEAGUE_SCHEDULE   = 0b000000000010
   MANAGE_BONSPIEL_SCHEDULE = 0b000000000100
   MANAGE_PROFILES          = 0b000000001000
   VIEW_SCHEDULE            = 0b000000010000
+  UPLOAD_STYLES            = 0b000000100000
+  CHANGE_STYLES            = 0b000001000000
 
 def load_profiles(db_path):
   conn = sqlite3.connect(db_path)

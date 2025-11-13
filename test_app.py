@@ -57,7 +57,7 @@ def set_golden_path(func):
 
 class TestIceClock(unittest.TestCase):
   def setUp(self):
-    self.clock = app.IceClock(headless=True)
+    self.clock = app.IceClock(headless=True, styles_path="default_styles.json")
     self.clock._server_config = {k: v.value for k,v in server_config.items()}
 
     if GENERATE_GOLDENS and not os.path.isdir(GOLDEN_DIR):

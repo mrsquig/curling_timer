@@ -1,0 +1,22 @@
+{% extends "admin/base.html" %}
+{% block head %}
+  <title>Change Styles - Curling timer</title>
+{% endblock %}
+{% block header %}
+  Change Styles
+{% endblock %}
+{% block content %}
+    <div class="card">
+        <form method="post" action="{{ url_for('admin.change_styles') }}">
+            <label for="style">Select Style:</label><br>
+            <select id="style_file" name="style_file" required>
+                <option value="" disabled selected>-- Select a style --</option>
+                {% for style in style_files %}
+                    <option value="{{ style }}">{{ style }}</option>
+                {% endfor %}
+            </select><br><br>
+
+            <button type="submit" value="Change Style">Change Style</button>
+        </form>
+    </div>
+{% endblock %}

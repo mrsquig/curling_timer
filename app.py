@@ -94,22 +94,6 @@ class IceClock:
     # Initialize message stack
     self._messages = []
 
-    # Setup the styles
-    self.styles_path = styles_path
-    self.styles = styles
-
-    style_args_valid = (styles_path is not None or styles is not None) or (styles_path is None and styles is None)
-    assert style_args_valid, "Either styles_path or styles must be provided, but not both."
-
-    styles_folder_path = os.path.join(BASE_PATH, "static", "app_styles")
-    if styles_path is not None:
-      self.styles_path = styles_path if styles_folder_path in styles_path.lower() else os.path.join(styles_folder_path, styles_path)
-    else:
-      self.styles_path = os.path.join(styles_folder_path, "default_styles.json")
-
-    self.last_read_styles = None
-    self.update_styles()
-
     # Setup the dimensions for window mode and full-screen mode
     # We need to do this before setting up the window so that we
     # can get the accurate screen resolution.
@@ -134,6 +118,28 @@ class IceClock:
       self.width = self.fs_width
       self.height = self.fs_height
       self.screen = pygame.Surface((self.width, self.height))
+
+    # Setup the styles
+    self.styles_path = styles_path
+    self.styles = styles
+
+    style_args_valid = (styles_path is not None or styles is not None) or (styles_path is None and styles is None)
+    assert style_args_valid, "Either styles_path or styles must be provided, but not both."
+
+    styles_folder_path = os.path.join(BASE_PATH, "static", "app_styles")
+    if styles_path is not None:
+      self.styles_path = styles_path if styles_folder_path in styles_path.lower() else os.path.join(styles_folder_path, styles_path)
+    else:
+      try:
+        os.symlink("default_styles.json", os.path.join(styles_folder_path, "user_styles.json"))
+        self.styles_path = os.path.join(styles_folder_path, "user_styles.json")
+      except FileExistsError:
+        self.styles_path = os.path.join(styles_folder_path, "user_styles.json")
+      except OSError:
+        self.styles_path = os.path.join(styles_folder_path, "default_styles.json")
+
+    self.last_read_styles = None
+    self.update_styles()
 
     # Initialize UI elements
     self.init_UI()
@@ -171,7 +177,8 @@ class IceClock:
     global Color
 
     # Use the styles provided if they are not None
-    if self.styles is not None:
+    # This condition is only used by the style previewer
+    if self.styles is not None and self.headless:
       Color = color_factory(self.styles["colors"])
       return
 
