@@ -3,7 +3,7 @@ from datetime import datetime
 from config import ConfigValue, bool_type
 from collections import OrderedDict
 from admin.views import admin
-from admin import load_profiles, DATABASE_PATH
+from admin import load_profiles, DATABASE_PATH, STYES_PATH
 from datetime import timedelta
 import copy
 import json
@@ -147,8 +147,7 @@ def style_img():
     styles=input_data["styles"]
   else:
     style_name = input_data.get("style_name", "default")
-    style_dir = os.path.join(os.path.dirname(__file__), "static", "app_styles")
-    style_path = os.path.join(style_dir, "{}.json".format(style_name))
+    style_path = os.path.join(STYES_PATH, "{}.json".format(style_name))
     with open(style_path, 'r') as f:
       styles = json.load(f)
 
