@@ -7,16 +7,42 @@
 {% endblock %}
 {% block content %}
     <div class="card">
-        <form method="post" action="{{ url_for('admin.change_styles') }}">
+        <form method="post" action="{{ url_for('admin.change_styles') }}" name="styles_form">
             <label for="style">Select Style:</label><br>
             <select id="style_file" name="style_file" required>
                 <option value="" disabled selected>-- Select a style --</option>
                 {% for style in style_files %}
-                    <option value="{{ style }}">{{ style }}</option>
+                    <option value="{{ style }}" {% if style == current_style %}selected{% endif %}>{{ style }}</option>
                 {% endfor %}
             </select><br><br>
-
             <button type="submit" value="Change Style">Change Style</button>
+            <button type="button" id="preview_style_btn" style="background-color: gold;">Preview Style</button>
+            <button type="submit" id="delete_style_btn" style="background-color: red;" formaction="{{ url_for('admin.delete_style') }}">Delete Style</button>
         </form>
     </div>
+
+<div class="card">
+    <h3 id="normal_header"></h3>
+    <img id="generated_image" width="100%"> <br />
+
+    <h3 id="warning_1_header"></h3>
+    <img id="generated_image_warning_1" width="100%"><br />
+
+    <h3 id="warning_2_header"></h3>
+    <img id="generated_image_warning_2" width="100%">
+</div>
+
+<script>
+function get_form_data() {
+    inputData = {"style_name": document.forms['styles_form']['style_file'].value,
+                "image_settings": {
+                    "image_type": undefined
+                }
+                };
+
+    return inputData;
+}
+
+{% include 'scripts/style_preview.js' %}
+</script>
 {% endblock %}

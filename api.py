@@ -143,7 +143,14 @@ def get_style_image(end_num, styles, percent=0.25):
 @app.route('/style_img', methods=['POST'])
 def style_img():
   input_data = request.get_json()
-  styles=input_data["styles"]
+  if "styles" in input_data:
+    styles=input_data["styles"]
+  else:
+    style_name = input_data.get("style_name", "default")
+    style_dir = os.path.join(os.path.dirname(__file__), "static", "app_styles")
+    style_path = os.path.join(style_dir, "{}.json".format(style_name))
+    with open(style_path, 'r') as f:
+      styles = json.load(f)
 
   styles["colors"] = {k: tuple(v) for k,v in styles["colors"].items()}
   if input_data["image_settings"]["image_type"] == "normal":

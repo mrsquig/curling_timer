@@ -10,6 +10,7 @@ from urllib.parse import urlparse, urljoin
 from . import load_profiles, Permissions, DATABASE_PATH, scheduler, jobstores
 import json
 import copy
+import shutil
 
 admin = Blueprint('admin', __name__, template_folder="templates")
 
@@ -389,14 +390,13 @@ def add_profile(conn):
 def edit_profile(conn):
   cursor = conn.cursor()
 
-  original_name = request.form['original_name']
-  cursor.execute("SELECT name FROM server_profiles WHERE name=?", (original_name,))
+  profile_name = request.form['profile_name']
+  cursor.execute("SELECT name FROM server_profiles WHERE name=?", (profile_name,))
 
   if not cursor.fetchone():
     flash('Profile not found!')
     return redirect(url_for('admin.manage_profiles'))
 
-  name = request.form['name']
   time_per_end = int(request.form['time_per_end'])
   num_ends = int(request.form['num_ends'])
   count_direction = -1 if request.form.get('count_direction', 'down') == 'down' else 1
@@ -405,9 +405,9 @@ def edit_profile(conn):
   description = request.form['description']
 
   cursor.execute("""UPDATE server_profiles
-                    SET name=?, time_per_end=?, num_ends=?, count_direction=?, allow_overtime=?, stones_per_end=?, description=?
+                    SET time_per_end=?, num_ends=?, count_direction=?, allow_overtime=?, stones_per_end=?, description=?
                     WHERE name=?""",
-                  (name, time_per_end, num_ends, count_direction, allow_overtime, stones_per_end, description, original_name))
+                  (time_per_end, num_ends, count_direction, allow_overtime, stones_per_end, description, profile_name))
   conn.commit()
   flash('Profile updated successfully!')
 
@@ -416,12 +416,18 @@ def edit_profile(conn):
 def delete_profile(conn):
   cursor = conn.cursor()
 
-  original_name = request.form['original_name']
-  cursor.execute("SELECT name FROM server_profiles WHERE name=?", (original_name,))
+  profile_name = request.form['profile_name']
+  cursor.execute("SELECT name FROM server_profiles WHERE name=?", (profile_name,))
 
   if cursor.fetchone():
-    cursor.execute("DELETE FROM server_profiles WHERE name=?", (original_name,))
+    cursor.execute("DELETE FROM server_profiles WHERE name=?", (profile_name,))
     conn.commit()
+
+    for job in scheduler.get_jobs(jobstore='league'):
+      if profile_name in job.args:
+        scheduler.pause_job(job.id, jobstore='league')
+        flash('Profile was in use by some scheduled league jobs. Those jobs have been paused.')
+
     flash('Profile deleted successfully!')
   else:
     flash('Profile not found!')
@@ -713,7 +719,33 @@ def change_styles():
     os.replace(os.path.join(styles_dir, tmp_name), os.path.join(styles_dir, "user_styles.json"))
     flash('Style changed successfully!')
 
-  return render_template("admin/change_styles.html", style_files=[os.path.splitext(f)[0] for f in style_files])
+  current_style = "default_styles"
+  if os.path.exists(os.path.join(styles_dir, "user_styles.json")):
+    link_path = os.readlink(os.path.join(styles_dir, "user_styles.json"))
+    current_style = os.path.splitext(os.path.basename(link_path))[0]
+
+  return render_template("admin/change_styles.html", style_files=[os.path.splitext(f)[0] for f in style_files], current_style=current_style)
+
+@admin.route('/delete_style', methods=['POST'])
+@protected_route
+def delete_style():
+  if not check_permissions(Permissions.CHANGE_STYLES):
+    return redirect(url_for('admin.unauthorized'))
+
+  styles_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', 'app_styles')
+  style_name = request.form['style_file']
+  file_path = os.path.join(styles_dir, "{:s}.json".format(style_name))
+  recycle_bin_path = os.path.join(styles_dir, "recycle_bin")
+  if not os.path.exists(recycle_bin_path):
+    os.makedirs(recycle_bin_path)
+
+  if os.path.exists(file_path):
+    shutil.move(file_path, os.path.join(recycle_bin_path, "{:s}_{:d}.json".format(style_name, int(datetime.now().timestamp()))))
+    flash('Style deleted successfully!')
+  else:
+    flash('Style not found!')
+
+  return redirect(url_for('admin.change_styles'))
 
 @admin.route('/logout')
 def logout():
