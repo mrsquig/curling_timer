@@ -8,7 +8,7 @@ import json
 
 APP_BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 DATABASE_PATH = os.path.abspath(os.path.join(APP_BASE, 'app.db'))
-STYES_PATH = os.path.abspath(os.path.join(APP_BASE, 'static', 'app_styles'))
+STYLES_PATH = os.path.abspath(os.path.join(APP_BASE, 'static', 'app_styles'))
 
 jobstores = {
   "default": SQLAlchemyJobStore(url="sqlite:///{}".format(DATABASE_PATH)),

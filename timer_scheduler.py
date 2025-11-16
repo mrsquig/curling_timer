@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import logging
 import os
 import sqlite3
-from admin import DATABASE_PATH, STYES_PATH, jobstores
+from admin import DATABASE_PATH, STYLES_PATH, jobstores
 
 logging.basicConfig()
 logger = logging.getLogger('scheduler')
@@ -66,7 +66,7 @@ def clear_style_recycle_bin(time_limit_days=7):
   Clear out files in the styles recycle bin older than time_limit_days days.
   Default is 7 days.
   """
-  recycle_bin_path = os.path.join(STYES_PATH, "recycle_bin")
+  recycle_bin_path = os.path.join(STYLES_PATH, "recycle_bin")
   if not os.path.exists(recycle_bin_path):
     return
 
