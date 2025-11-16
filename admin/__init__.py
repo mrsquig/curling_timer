@@ -6,7 +6,9 @@ from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.background import BackgroundScheduler
 import json
 
-DATABASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app.db'))
+APP_BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+DATABASE_PATH = os.path.abspath(os.path.join(APP_BASE, 'app.db'))
+STYLES_PATH = os.path.abspath(os.path.join(APP_BASE, 'static', 'app_styles'))
 
 jobstores = {
   "default": SQLAlchemyJobStore(url="sqlite:///{}".format(DATABASE_PATH)),

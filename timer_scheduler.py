@@ -2,11 +2,11 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.jobstores.memory import MemoryJobStore
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import os
 import sqlite3
-from admin import DATABASE_PATH, jobstores
+from admin import DATABASE_PATH, STYLES_PATH, jobstores
 
 logging.basicConfig()
 logger = logging.getLogger('scheduler')
@@ -61,6 +61,30 @@ def refresh_jobs():
       scheduler.remove_jobstore(key)
       scheduler.add_jobstore(jobstores[key], alias=key)
 
+def clear_style_recycle_bin(time_limit_days=7):
+  """
+  Clear out files in the styles recycle bin older than time_limit_days days.
+  Default is 7 days.
+  """
+  recycle_bin_path = os.path.join(STYLES_PATH, "recycle_bin")
+  if not os.path.exists(recycle_bin_path):
+    return
+
+  now = datetime.now()
+  cutoff = now - timedelta(days=time_limit_days)
+  cutoff = cutoff.timestamp()
+
+  for filename in os.listdir(recycle_bin_path):
+    file_path = os.path.join(recycle_bin_path, filename)
+    if os.path.isfile(file_path):
+      file_mtime = os.path.getmtime(file_path)
+      if file_mtime < cutoff:
+        try:
+          os.remove(file_path)
+          logger.info("Deleted recycled style file: {}".format(file_path))
+        except Exception as e:
+          logger.error("Error deleting file {}: {}".format(file_path, e))
+
 if __name__ == "__main__":
   try:
     scheduler.add_job(
@@ -68,6 +92,14 @@ if __name__ == "__main__":
         trigger="interval",
         seconds=60,
         id="refresh_jobs",
+        jobstore="memory"
+    )
+
+    scheduler.add_job(
+        clear_style_recycle_bin,
+        trigger="interval",
+        hours=24,
+        id="clear_style_recycle_bin",
         jobstore="memory"
     )
 

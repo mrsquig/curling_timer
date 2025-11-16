@@ -30,7 +30,7 @@
                 <form method="post" style="display:inline;">
                 <td>
                     <p class="mobile-label">Profile name</p>
-                    <input name="name" value="{{ name }}" required>
+                    <span>{{ name }}</span>
                 </td>
                 <td>
                     <p class="mobile-label">Time per end (seconds)</p>
@@ -64,12 +64,12 @@
                 </td>
         <td>
             <input name="action" type="hidden" value="edit">
-            <input name="original_name" type="hidden" value="{{ name }}">
+            <input name="profile_name" type="hidden" value="{{ name }}">
             <button type="submit">Edit Profile</button>
             </form>
             <form method="post" style="display:inline;">
             <input name="action" type="hidden" value="delete">
-            <input name="original_name" type="hidden" value="{{ name }}">
+            <input name="profile_name" type="hidden" value="{{ name }}">
             <button type="submit" style="background-color: red;">Delete Profile</button>
             </form>
         </td>

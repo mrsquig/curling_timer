@@ -3,7 +3,7 @@ from datetime import datetime
 from config import ConfigValue, bool_type
 from collections import OrderedDict
 from admin.views import admin
-from admin import load_profiles, DATABASE_PATH
+from admin import load_profiles, DATABASE_PATH, STYLES_PATH
 from datetime import timedelta
 import copy
 import json
@@ -143,7 +143,13 @@ def get_style_image(end_num, styles, percent=0.25):
 @app.route('/style_img', methods=['POST'])
 def style_img():
   input_data = request.get_json()
-  styles=input_data["styles"]
+  if "styles" in input_data:
+    styles=input_data["styles"]
+  else:
+    style_name = input_data.get("style_name", "default")
+    style_path = os.path.join(STYLES_PATH, "{}.json".format(style_name))
+    with open(style_path, 'r') as f:
+      styles = json.load(f)
 
   styles["colors"] = {k: tuple(v) for k,v in styles["colors"].items()}
   if input_data["image_settings"]["image_type"] == "normal":
