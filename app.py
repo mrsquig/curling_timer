@@ -298,14 +298,15 @@ class IceClock:
     elif self._server_config["game_type"] == "bonspiel" and self._uptime >= self._server_config["time_to_chime"]:
       text = self.fonts["last_end"].render("FINISH END +1", True, color)
     elif self.warning_level == 2 and not self._server_config["game_type"] == "bonspiel" and not self._is_overtime:
-      text = self.fonts["warning"].render("NO NEW ENDS", True, color)
+      text = self.fonts["warning"].render("FINISH CURRENT END", True, color)
     elif self.warning_level == 1 and not self._server_config["game_type"] == "bonspiel" and not self._is_overtime:
-      msg = "FINISHED {:d}? PLAY {:d}".format(self._server_config["num_ends"]-2, self._server_config["num_ends"]-1)
+      msg = "PLAY {:d} CUTOFF".format(self._server_config["num_ends"]-1)
       text = self.fonts["warning"].render(msg, True, color)
     elif self._is_overtime:
       text = self.fonts["last_end"].render("OVERTIME", True, color)
     else:
-      text = self.fonts["last_end"].render("", True, color)
+      msg = "PLAY {:d} CUTOFF".format(self._server_config["num_ends"])
+      text = self.fonts["last_end"].render(msg, True, color)
 
     if self._server_config["game_type"] != "bonspiel":
       text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 6.5*self.height // 16))
@@ -351,14 +352,14 @@ class IceClock:
     stones_per_end = self._server_config["stones_per_end"]
 
     # Set up progress bar(s)
-    self.bar_width = self.width // 8
+    self.bar_width = self.width // 12
     self.bar_height = 7*self.height // 8
 
     # Calculate the height for each stone section then update the progress bar height
     section_height = self.bar_height // stones_per_end
     self.bar_height = section_height * stones_per_end
 
-    self.bar_x_offset = 13*self.width // 32
+    self.bar_x_offset = 13*self.width // 30
     bar_x = ((self.width - self.bar_width) // 2 - self.bar_x_offset,
              (self.width - self.bar_width) // 2 + self.bar_x_offset)
 
