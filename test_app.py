@@ -30,7 +30,16 @@ GOLDEN_DIR = os.path.join(BASE_PATH, "app_tests")
 def render_app(clock, end_num, end_percentage):
   img_io = io.BytesIO()
 
-  if not clock._server_config["count_in"]:
+  clock._total_time = clock._server_config["num_ends"] * clock._server_config["time_per_end"]
+  if not clock._server_config["count_in"] and not clock._server_config["game_type"] == "bonspiel":
+    clock._end_number = end_num
+    clock._uptime = clock._server_config["time_per_end"] * (end_num - 1) + end_percentage * clock._server_config["time_per_end"]
+
+    num_ends = clock._server_config["num_ends"]
+    time_per_end = clock._server_config["time_per_end"]
+    total_time = clock.cutoff_times[clock.warning_level]
+    elapsed = clock._uptime
+  elif clock._server_config["game_type"] == "bonspiel":
     total_time = clock._server_config["time_per_end"] * clock._server_config["num_ends"]
     elapsed = clock._server_config["time_per_end"] * (end_num - 1) + end_percentage * clock._server_config["time_per_end"]
   else:
@@ -151,7 +160,7 @@ class TestIceClock(unittest.TestCase):
   def test_long_message(self, golden_path=None):
     end_num = 2
     end_percentage = 0.5
-    self.clock._messages.append(("This message will be truncated because it is too long!", app.timestamp()))
+    self.clock._messages.append(("This message will be truncated because it is too long! It is really very long. Who made this message so long?", app.timestamp()))
     img_io = render_app(self.clock, end_num, end_percentage)
     self.image_test(img_io, golden_path)
 
