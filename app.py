@@ -25,9 +25,9 @@ SERVER_PORT = None
 SERVER_PROCESS = None
 CONFIG_UPDATE_TIME_LIMIT = 30
 MESSAGE_TIME_LIMIT = 10
-MESSAGE_CHR_SOFT_LIMIT = 10
-MESSAGE_CHR_HARD_LIMIT = 20
-MESSAGE_LINE_LIMIT = 3
+MESSAGE_CHR_SOFT_LIMIT = 18
+MESSAGE_CHR_HARD_LIMIT = 28
+MESSAGE_LINE_LIMIT = 4
 WARNING_END_PERCENT = 0.334
 Color = None
 
@@ -165,10 +165,11 @@ class IceClock:
     # Set up the fonts
     #courier = pygame.font.match_font("couriernew", bold=True)
     self.fonts = {}
-    self.fonts["timer"] = self.create_font(3, 16)
+    self.fonts["timer"] = self.create_font(4, 16)
     self.fonts["last_end"] = self.create_font(2, 16)
-    self.fonts["warning"] = self.create_font(3, 32)
-    self.fonts["end"] = self.create_font(1, 2)
+    self.fonts["warning"] = self.create_font(4, 32)
+    self.fonts["end_num_large"] = self.create_font(10, 32)
+    self.fonts["end_num_small"] = self.create_font(5, 32)
     self.fonts["end_progress_label"] = self.create_font(1, 32)
     self.fonts["messages"] = self.create_font(3, 32)
     self.fonts["count_in"] = self.create_font(4, 16)
@@ -219,6 +220,21 @@ class IceClock:
     return self._total_time
 
   @property
+  def cutoff_times(self):
+    if self._server_config["game_type"] == "bonspiel":
+      return []
+
+    num_ends = self._server_config["num_ends"]
+    time_per_end = self._server_config["time_per_end"]
+
+    cutoff_times = (
+      (num_ends - 2)*time_per_end + int(WARNING_END_PERCENT*time_per_end),
+      (num_ends - 1)*time_per_end + int(WARNING_END_PERCENT*time_per_end),
+      self.total_time
+    )
+    return cutoff_times
+
+  @property
   def warning_level(self):
     uptime = self._uptime
     end_number = self._end_number
@@ -229,15 +245,15 @@ class IceClock:
 
     if game_type == "bonspiel":
       if end_number < num_ends - 1:
-        return None
+        return 0
       elif end_number == num_ends - 1:
         return 1
       elif end_number >= num_ends and not allow_ot:
         return 2
     elif game_type == "league":
-      if uptime < (num_ends - 2)*time_per_end + int(WARNING_END_PERCENT*time_per_end):
-        return None
-      elif uptime < (num_ends - 1)*time_per_end + int(WARNING_END_PERCENT*time_per_end):
+      if uptime < self.cutoff_times[0]:
+        return 0
+      elif uptime < self.cutoff_times[1]:
         return 1
       elif end_number >= num_ends and not allow_ot:
         return 2
@@ -258,14 +274,28 @@ class IceClock:
     times = response.json().get("times")
     self._server_config = response.json().get("config")
 
-    self._hours = times["hours"]
-    self._minutes = times["minutes"]
-    self._seconds = times["seconds"]
     self._end_number = times["end_number"]
     self._end_percentage = times["end_percentage"]
     self._is_overtime = times["is_overtime"]
     self._uptime = times["uptime"]
     self._total_time = times["total_time"]
+
+    if self.config["game_type"] == "bonspiel":
+      self._hours = times["hours"]
+      self._minutes = times["minutes"]
+      self._seconds = times["seconds"]
+    else:
+      num_ends = self._server_config["num_ends"]
+      time_per_end = self._server_config["time_per_end"]
+      total_time = self.cutoff_times[self.warning_level]
+
+      remaining_time = total_time - self._uptime
+      if remaining_time < 0:
+        remaining_time = 0
+      self._hours = int(remaining_time // 3600)
+      self._minutes = int((remaining_time // 60) % 60)
+      self._seconds = int(remaining_time % 60)
+
 
   def get_text_color(self):
     if not self.warning_level:
@@ -286,7 +316,7 @@ class IceClock:
     color = self.get_text_color()
 
     text = self.fonts["timer"].render("{:02d}:{:02d}:{:02d}".format(self._hours, self._minutes, self._seconds), True, color)
-    text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))
+    text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 3*self.height // 32))
     self.screen.blit(text, text_rect)
 
   def render_detail_text(self):
@@ -298,17 +328,21 @@ class IceClock:
     elif self._server_config["game_type"] == "bonspiel" and self._uptime >= self._server_config["time_to_chime"]:
       text = self.fonts["last_end"].render("FINISH END +1", True, color)
     elif self.warning_level == 2 and not self._server_config["game_type"] == "bonspiel" and not self._is_overtime:
-      text = self.fonts["warning"].render("NO NEW ENDS", True, color)
-    elif self.warning_level == 1 and not self._server_config["game_type"] == "bonspiel" and not self._is_overtime:
-      msg = "FINISHED {:d}? PLAY {:d}".format(self._server_config["num_ends"]-2, self._server_config["num_ends"]-1)
+      msg = "FINISH CURRENT END" if not self.jestermode else "FINNISH CURRENT END"
       text = self.fonts["warning"].render(msg, True, color)
+    elif self.warning_level == 1 and not self._server_config["game_type"] == "bonspiel" and not self._is_overtime:
+      msg = "PLAY {:d} CUTOFF".format(self._server_config["num_ends"]-1)
+      text = self.fonts["warning"].render(msg, True, color)
+    elif self._server_config["game_type"] != "bonspiel":
+      msg = "PLAY {:d} CUTOFF".format(self._server_config["num_ends"])
+      text = self.fonts["last_end"].render(msg, True, color)
     elif self._is_overtime:
       text = self.fonts["last_end"].render("OVERTIME", True, color)
     else:
       text = self.fonts["last_end"].render("", True, color)
 
     if self._server_config["game_type"] != "bonspiel":
-      text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 6.5*self.height // 16))
+      text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 11*self.height // 32))
     else:
       text_rect = text.get_rect(center=(self.center["x"], self.center["y"] + 4*self.height // 16))
     self.screen.blit(text, text_rect)
@@ -324,19 +358,19 @@ class IceClock:
 
     if not self._is_overtime:
       end_num = self._end_number if self._end_number < self._server_config["num_ends"] else self._server_config["num_ends"]
-      text = self.fonts["end"].render("{:d}".format(end_num), True, color)
-      text_rect = text.get_rect(center=(self.center["x"] - 2*self.width // 32, self.center["y"] - 3*self.height // 16))
+      text = self.fonts["end_num_large"].render("{:d}".format(end_num), True, color)
+      text_rect = text.get_rect(center=(self.center["x"] - 2*self.width // 32, self.center["y"] - 5*self.height // 16))
       if self.jestermode:
         text = pygame.transform.flip(text, False, True)
       self.screen.blit(text, text_rect)
 
-      text = self.fonts["timer"].render("/{:d}".format(self._server_config["num_ends"]), True, color)
-      text_rect = text.get_rect(center=(self.center["x"] + 3*self.width // 32, self.center["y"] - 3*self.height // 16))
+      text = self.fonts["end_num_small"].render("/{:d}".format(self._server_config["num_ends"]), True, color)
+      text_rect = text.get_rect(center=(self.center["x"] + 2*self.width // 32, self.center["y"] - 5*self.height // 16))
       if self.jestermode:
         text = pygame.transform.flip(text, False, True)
       self.screen.blit(text, text_rect)
     else:
-      text = self.fonts["end"].render("OT", True, color)
+      text = self.fonts["end_num_large"].render("OT", True, color)
       if self.jestermode:
         text = pygame.transform.flip(text, False, True)
       text_rect = text.get_rect(center=(self.center["x"], self.center["y"] - 3*self.height // 16))
@@ -351,14 +385,14 @@ class IceClock:
     stones_per_end = self._server_config["stones_per_end"]
 
     # Set up progress bar(s)
-    self.bar_width = self.width // 8
+    self.bar_width = self.width // 12
     self.bar_height = 7*self.height // 8
 
     # Calculate the height for each stone section then update the progress bar height
     section_height = self.bar_height // stones_per_end
     self.bar_height = section_height * stones_per_end
 
-    self.bar_x_offset = 13*self.width // 32
+    self.bar_x_offset = 13*self.width // 30
     bar_x = ((self.width - self.bar_width) // 2 - self.bar_x_offset,
              (self.width - self.bar_width) // 2 + self.bar_x_offset)
 
@@ -477,7 +511,7 @@ class IceClock:
     if len(output_lines) < MESSAGE_LINE_LIMIT:
       output_lines.append(line_buf)
     else:
-      output_lines[MESSAGE_LINE_LIMIT-1] = "{:s}...".format(output_lines[MESSAGE_LINE_LIMIT-1][:MESSAGE_CHR_HARD_LIMIT-3])
+      output_lines[-1] = "{:s}...".format(output_lines[-1][:MESSAGE_CHR_HARD_LIMIT-3])
     Nlines = len(output_lines)
 
     # Render the message to the screen
@@ -530,7 +564,7 @@ class IceClock:
     self.screen.fill(Color.SCREEN_BG.value)
     if not self._server_config["count_in"]:
       self.render_end_progress_bar()
-    #self.render_end_progress_labels()
+    #elf.render_end_progress_labels()
 
     # If there are messages, render them and skip the timer
     if self._messages:
@@ -541,7 +575,9 @@ class IceClock:
       pass
     else:
       self.render_timer()
-    self.render_detail_text()
+
+    if not self._messages and not self._server_config["count_in"]:
+      self.render_detail_text()
 
     if not self._server_config["count_in"]:
       self.render_end_number()
