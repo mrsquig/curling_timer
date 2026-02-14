@@ -56,6 +56,7 @@ def index():
         Permissions.MANAGE_PROFILES,
         Permissions.MANAGE_LEAGUE_SCHEDULE,
         Permissions.MANAGE_BONSPIEL_SCHEDULE,
+        Permissions.MANAGE_ONE_TIME_JOB_SCHEDULE,
     ]
     for perm in Permissions:
       if perm not in display_order:
@@ -214,6 +215,100 @@ def manage_league_schedule():
   ]
   profiles = load_profiles(DATABASE_PATH)
   return render_template("admin/league_scheduler.html", jobs=jobs, profiles=profiles)
+
+def add_one_time_job():
+  job_id = request.form['job_id']
+  start_dt_str = request.form['start_datetime']
+  start_dt = datetime.fromisoformat(start_dt_str)
+  profile = request.form['profile']
+
+  if scheduler.get_job(job_id):
+    flash('Job ID already exists!')
+    return redirect(url_for('admin.manage_one_time_job_schedule'))
+
+  scheduler.add_job(
+    id=job_id,
+    name="one_time_job",
+    func="timer_scheduler:start_one_time_job",
+    args=[profile],
+    trigger="cron",
+    year=start_dt.year,
+    month=start_dt.month,
+    day=start_dt.day,
+    hour=start_dt.hour,
+    minute=start_dt.minute,
+    replace_existing=False,
+    jobstore='one_time_job'
+  )
+  flash('Job added successfully!')
+
+def edit_one_time_job():
+  job_id = request.form['job_id']
+  start_dt_str = request.form['start_datetime']
+  start_dt = datetime.fromisoformat(start_dt_str)
+  profile = request.form['profile']
+
+  job = scheduler.get_job(job_id)
+  if not job:
+    flash('Job not found!')
+    return redirect(url_for('admin.manage_one_time_job_schedule'))
+
+  trigger = CronTrigger(
+    year=start_dt.year,
+    month=start_dt.month,
+    day=start_dt.day,
+    hour=start_dt.hour,
+    minute=start_dt.minute,
+  )
+
+  scheduler.modify_job(
+    job_id,
+    trigger=trigger,
+    args=[profile]
+  )
+  flash('Job updated successfully!')
+
+def delete_one_time_job():
+  job_id = request.form['job_id']
+  job = scheduler.get_job(job_id)
+  if not job:
+    flash('Job not found!')
+    return redirect(url_for('admin.manage_one_time_job_schedule'))
+
+  scheduler.remove_job(job_id)
+  flash('Job deleted successfully!')
+
+@admin.route('/one_time_job_scheduler', methods=['GET', 'POST'])
+@protected_route
+def manage_one_time_job_schedule():
+  if not check_permissions(Permissions.MANAGE_ONE_TIME_JOB_SCHEDULE):
+    return redirect(url_for('admin.unauthorized'))
+
+  if request.method == 'POST':
+    action = request.form['action']
+
+    if action == 'add':
+      add_one_time_job()
+    elif action == 'delete':
+      delete_one_time_job()
+    elif action == 'edit':
+      edit_one_time_job()
+
+  jobs = scheduler.get_jobs(jobstore='one_time_job')
+  jobs.sort(key=lambda j: j.next_run_time.replace(tzinfo=None) if j.next_run_time else datetime.max)
+  jobs = [
+      {
+        "id": job.id,
+        "start_dt": datetime(year=int(str(job.trigger.fields[0])),
+                             month=int(str(job.trigger.fields[1])),
+                             day=int(str(job.trigger.fields[2])),
+                             hour=int(str(job.trigger.fields[5])),
+                             minute=int(str(job.trigger.fields[6]))),
+        "profile": job.args[0]
+      } for job in jobs
+  ]
+  profiles = load_profiles(DATABASE_PATH)
+  return render_template("admin/one_time_job_scheduler.html", jobs=jobs, profiles=profiles)
 
 def add_bonspiel_job():
   job_id = request.form['job_id']
