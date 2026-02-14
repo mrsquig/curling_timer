@@ -26,6 +26,14 @@ def start_timer(profile):
   requests.get('http://localhost:5000/reset')
   requests.get('http://localhost:5000/start')
 
+def start_one_time_job(profile):
+  is_timer_running = requests.get('http://localhost:5000/config?key=is_timer_running').json().get('is_timer_running', False)
+  if is_timer_running:
+    logger.info("Timer is already running. Skipping one-time job start.")
+    return
+
+  start_timer(profile)
+
 def start_bonspiel(job_id, time_to_chime, time_per_end, stones_per_end, timer_count_in, allow_ot, count_direction):
   # Load settings for bonspiel
   settings = [

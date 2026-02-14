@@ -1,0 +1,77 @@
+{% extends "admin/base.html" %}
+{% block head %}
+  <title>One Time Job Scheduler - Curling timer</title>
+{% endblock %}
+{% block header %}
+  One Time Job Scheduler
+  <button class="popover-button" popovertarget="help-popover">
+      <img src="{{ url_for('static', filename='images/circle-info.svg') }}"
+          alt="Timer help" height="20" width="20" />
+  </button>
+{% endblock %}
+{% block content %}
+  <div class="card">
+      <h2>Current jobs</h2>
+          <table>
+              <thead>
+              <tr>
+                  <th>Job ID</th>
+                  <th>Start date</th>
+                  <th>Profile</th>
+                  <th>Actions</th>
+              </tr>
+              </thead>
+              <tbody>
+        {% for job in jobs %}
+              <tr>
+              <form method="post" style="display:inline;">
+                  <td>{{ job["id"] }}</td>
+                  <td>
+                    <p class="mobile-label">Start date</p>
+                    <input type="datetime-local" id="start_datetime" name="start_datetime" value="{{ job['start_dt'].strftime('%Y-%m-%dT%H:%M') }}" required><br>
+                  </td>
+                  <td>
+                    <p class="mobile-label">Profile</p>
+                      <select name="profile" required>
+                          {% for profile in profiles %}
+                            <option value="{{ profile }}" {% if profile == job["profile"] %}selected{% endif %}>{{ profile }}</option>
+                          {% endfor %}
+                      </select>
+                  <td>
+              <input name="action" type="hidden" value="edit">
+              <input name="job_id" type="hidden" value="{{ job['id'] }}">
+              <button type="submit">Edit</button>
+            </form>
+            <form method="post" style="display:inline;">
+              <input name="action" type="hidden" value="delete">
+              <input name="job_id" type="hidden" value="{{ job['id'] }}">
+              <button type="submit" style="background-color: red;">Delete</button>
+            </form>
+          </td>
+      </tr>
+        {% endfor %}
+      </tbody>
+  </table>
+  </div>
+  <div class="card">
+      <h2>Add job</h2>
+      <form name="add_job" method="post">
+        <input name="action" type="hidden" value="add">
+        <label for="job_id">Job Name:</label><br>
+        <input name="job_id" placeholder="Job name" required><br>
+        <label for="start_datetime">Start Date and time:</label><br>
+        <input type="datetime-local" id="start_datetime" name="start_datetime" required><br>
+        <label for="profile">Profile:</label><br>
+        <select name="profile" required>
+          {% for profile in profiles %}
+            <option value="{{ profile }}">{{ profile }}</option>
+          {% endfor %}
+        </select><br>
+        <button type="submit" value="Add Job">Add Job</button>
+      </form>
+  </div>
+
+  <div popover id="help-popover">
+    {% include 'partials/timer_help.html' %}
+  </div>
+{% endblock %}
