@@ -128,6 +128,7 @@ def get_style_image(end_num, styles, percent=0.25):
   total_time = server_config["time_per_end"].value * server_config["num_ends"].value
   elapsed = server_config["time_per_end"].value * (end_num - 1) + percent * server_config["time_per_end"].value
 
+  clock._total_time = total_time
   clock._hours = int((total_time-elapsed) // 3600)
   clock._minutes = int(((total_time-elapsed) // 60) % 60)
   clock._seconds = int((total_time-elapsed) % 60)
