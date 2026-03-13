@@ -818,8 +818,8 @@ def change_styles():
     flash('Style changed successfully!')
 
   current_style = "default_styles"
-  if os.path.exists(os.path.join(styles_dir, "user_styles.json")):
-    link_path = os.readlink(os.path.join(styles_dir, "user_styles.json"))
+  if os.path.exists(os.path.join(STYLES_PATH, "user_styles.json")):
+    link_path = os.readlink(os.path.join(STYLES_PATH, "user_styles.json"))
     current_style = os.path.splitext(os.path.basename(link_path))[0]
 
   return render_template("admin/change_styles.html", style_files=[os.path.splitext(f)[0] for f in style_files], current_style=current_style)
