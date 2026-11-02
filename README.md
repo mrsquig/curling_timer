@@ -126,6 +126,9 @@ The following keys can be defined:
 | Key | Description | Default value |
 |-----|-------------|---------------|
 |SCREEN_BG | Background color of the timer | (0, 0, 0) |
+|SCREEN_BG_WARNING_1 | Background color at the first warning. Uses SCREEN_BG when omitted. | SCREEN_BG |
+|SCREEN_BG_WARNING_2 | Background color at the second warning. Uses SCREEN_BG when omitted. | SCREEN_BG |
+|SCREEN_BG_OT | Background color during overtime. Uses SCREEN_BG when omitted. | SCREEN_BG |
 |BAR_FG1 | Progress bar foreground color #1 | (40, 80, 160) |
 |BAR_FG2 | Progress bar foreground color #2 | (126, 104, 130) |
 |BAR_BG | Progress bar background color| (50, 50, 50) |

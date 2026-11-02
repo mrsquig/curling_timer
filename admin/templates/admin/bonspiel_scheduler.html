@@ -70,6 +70,19 @@
                                 </select>
                             </td>
                         </tr>
+                        <tr>
+                            <td>Draw start times:<br>
+                                <div class="draw-list">
+                                    {% for draw in job['draws'] %}
+                                    <div class="draw-row">
+                                        <input type="datetime-local" name="draw_datetime" value="{{ draw.strftime('%Y-%m-%dT%H:%M') }}">
+                                        <button type="button" class="remove-draw">Remove</button>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <button type="button" class="add-draw">Add draw</button>
+                            </td>
+                        </tr>
                     </table>
                 <td>
             <input name="action" type="hidden" value="edit">
@@ -121,6 +134,10 @@
             <option value="up">Up</option>
         </select><br>
 
+        <label>Draw start times:</label><br>
+        <div class="draw-list"></div>
+        <button type="button" class="add-draw">Add draw</button><br>
+
         <button type="submit" value="Schedule Bonspiel">Schedule Bonspiel</button>
     </form>
 </div>
@@ -128,4 +145,33 @@
 <div popover id="help-popover">
   {% include 'partials/timer_help.html' %}
 </div>
+<script>
+document.addEventListener('click', function(event) {
+  if (event.target.classList.contains('remove-draw')) {
+    event.target.closest('.draw-row').remove();
+    return;
+  }
+
+  if (!event.target.classList.contains('add-draw')) {
+    return;
+  }
+
+  var list = event.target.previousElementSibling;
+  var row = document.createElement('div');
+  row.className = 'draw-row';
+
+  var input = document.createElement('input');
+  input.type = 'datetime-local';
+  input.name = 'draw_datetime';
+
+  var remove = document.createElement('button');
+  remove.type = 'button';
+  remove.className = 'remove-draw';
+  remove.textContent = 'Remove';
+
+  row.appendChild(input);
+  row.appendChild(remove);
+  list.appendChild(row);
+});
+</script>
 {% endblock %}

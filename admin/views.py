@@ -310,54 +310,116 @@ def manage_one_time_job_schedule():
   profiles = load_profiles(DATABASE_PATH)
   return render_template("admin/one_time_job_scheduler.html", jobs=jobs, profiles=profiles)
 
-def add_bonspiel_job():
-  job_id = request.form['job_id']
-  start_dt_str = request.form['start_datetime']
-  end_dt_str = request.form['end_datetime']
-
-  start_dt = datetime.fromisoformat(start_dt_str)
-  end_dt = datetime.fromisoformat(end_dt_str)
-
+def bonspiel_form_settings():
   time_to_chime = int(request.form['time_to_chime'])
   time_per_end = int(request.form['time_per_end'])
   stones_per_end = int(request.form['stones_per_end'])
   timer_count_in = int(request.form['timer_count_in'])
   allow_ot = request.form.get('allow_ot', 'off') == 'on'
   count_direction = -1 if request.form.get('count_direction', 'down') == 'down' else 1
+  return (time_to_chime, time_per_end, stones_per_end, timer_count_in, allow_ot, count_direction)
+
+def parse_draw_datetimes(start_dt, end_dt):
+  draws = []
+  seen = set()
+  for value in request.form.getlist('draw_datetime'):
+    value = value.strip()
+    if not value:
+      continue
+    try:
+      draw_dt = datetime.fromisoformat(value)
+    except ValueError:
+      flash('Draw time "{:s}" is not a valid date and time.'.format(value))
+      return None
+    if draw_dt in seen:
+      flash('Draw times must be unique.')
+      return None
+    if not (start_dt <= draw_dt < end_dt):
+      flash('Draw at {:s} must be at or after the bonspiel start and before the bonspiel end.'.format(draw_dt.strftime('%Y-%m-%d %H:%M')))
+      return None
+    seen.add(draw_dt)
+    draws.append(draw_dt)
+  draws.sort()
+  return draws
+
+def bonspiel_draw_jobs(job_id):
+  return [job for job in scheduler.get_jobs(jobstore='bonspiel')
+          if job.name == 'bonspiel_draw' and job.args and job.args[0] == job_id]
+
+def remove_bonspiel_draws(job_id):
+  for job in bonspiel_draw_jobs(job_id):
+    scheduler.remove_job(job.id, jobstore='bonspiel')
+
+def add_bonspiel_draws(job_id, draws, settings):
+  for index, draw_dt in enumerate(draws):
+    scheduler.add_job(
+      id="{:s}__draw__{:d}_{:s}".format(job_id, index, uuid.uuid4().hex[:8]),
+      name="bonspiel_draw",
+      func="timer_scheduler:start_bonspiel_draw",
+      args=[job_id, *settings],
+      trigger="cron",
+      year=draw_dt.year,
+      month=draw_dt.month,
+      day=draw_dt.day,
+      hour=draw_dt.hour,
+      minute=draw_dt.minute,
+      replace_existing=False,
+      jobstore='bonspiel'
+    )
+
+def cron_trigger_datetime(trigger):
+  fields = trigger.fields
+  return datetime(year=int(str(fields[0])),
+                  month=int(str(fields[1])),
+                  day=int(str(fields[2])),
+                  hour=int(str(fields[5])),
+                  minute=int(str(fields[6])))
+
+def add_bonspiel_cron_job(job_id, name, func, args, when):
+  scheduler.add_job(
+    id=job_id,
+    name=name,
+    func=func,
+    args=args,
+    trigger="cron",
+    year=when.year,
+    month=when.month,
+    day=when.day,
+    hour=when.hour,
+    minute=when.minute,
+    replace_existing=False,
+    jobstore='bonspiel'
+  )
+
+def add_bonspiel_job():
+  job_id = request.form['job_id']
+  start_dt = datetime.fromisoformat(request.form['start_datetime'])
+  end_dt = datetime.fromisoformat(request.form['end_datetime'])
+  settings = bonspiel_form_settings()
 
   if scheduler.get_job(job_id):
     flash('Job ID already exists!')
     return redirect(url_for('admin.manage_bonspiel_schedule'))
 
-  scheduler.add_job(
-    id=job_id,
-    name="bonspiel_start",
-    func="timer_scheduler:start_bonspiel",
-    args=[job_id, time_to_chime, time_per_end, stones_per_end, timer_count_in, allow_ot, count_direction],
-    trigger="cron",
-    year=start_dt.year,
-    month=start_dt.month,
-    day=start_dt.day,
-    hour=start_dt.hour,
-    minute=start_dt.minute,
-    replace_existing=False,
-    jobstore='bonspiel'
-  )
+  draws = parse_draw_datetimes(start_dt, end_dt)
+  if draws is None:
+    return
 
-  scheduler.add_job(
-    id="{:s}_end".format(job_id),
-    name="bonspiel_end",
-    func="timer_scheduler:end_bonspiel",
-    args=[job_id],
-    trigger="cron",
-    year=end_dt.year,
-    month=end_dt.month,
-    day=end_dt.day,
-    hour=end_dt.hour,
-    minute=end_dt.minute,
-    replace_existing=False,
-    jobstore='bonspiel'
+  add_bonspiel_cron_job(
+    job_id,
+    "bonspiel_start",
+    "timer_scheduler:start_bonspiel",
+    [job_id, *settings],
+    start_dt
   )
+  add_bonspiel_cron_job(
+    "{:s}_end".format(job_id),
+    "bonspiel_end",
+    "timer_scheduler:end_bonspiel",
+    [job_id],
+    end_dt
+  )
+  add_bonspiel_draws(job_id, draws, settings)
   flash('Job added successfully!')
 
 def delete_bonspiel_job():
@@ -368,30 +430,26 @@ def delete_bonspiel_job():
     flash('Job not found!')
     return redirect(url_for('admin.manage_bonspiel_schedule'))
 
+  remove_bonspiel_draws(job_id)
   scheduler.remove_job(job_id)
   scheduler.remove_job("{:s}_end".format(job_id))
   flash('Job deleted successfully!')
 
 def edit_bonspiel_job():
   job_id = request.form['job_id']
-  start_dt_str = request.form['start_datetime']
-  end_dt_str = request.form['end_datetime']
-
-  start_dt = datetime.fromisoformat(start_dt_str)
-  end_dt = datetime.fromisoformat(end_dt_str)
-
-  time_to_chime = int(request.form['time_to_chime'])
-  time_per_end = int(request.form['time_per_end'])
-  stones_per_end = int(request.form['stones_per_end'])
-  timer_count_in = int(request.form['timer_count_in'])
-  allow_ot = request.form.get('allow_ot', 'off') == 'on'
-  count_direction = -1 if request.form.get('count_direction', 'down') == 'down' else 1
+  start_dt = datetime.fromisoformat(request.form['start_datetime'])
+  end_dt = datetime.fromisoformat(request.form['end_datetime'])
+  settings = bonspiel_form_settings()
 
   start_job = scheduler.get_job(job_id)
   end_job = scheduler.get_job("{:s}_end".format(job_id))
   if not start_job or not end_job:
     flash('Job not found!')
     return redirect(url_for('admin.manage_bonspiel_schedule'))
+
+  draws = parse_draw_datetimes(start_dt, end_dt)
+  if draws is None:
+    return
 
   start_trigger = CronTrigger(
       year=int(start_dt.year),
@@ -411,12 +469,14 @@ def edit_bonspiel_job():
   scheduler.modify_job(
     job_id,
     trigger=start_trigger,
-    args=[job_id, time_to_chime, time_per_end, stones_per_end, timer_count_in, allow_ot, count_direction],
+    args=[job_id, *settings],
   )
   scheduler.modify_job(
     "{:s}_end".format(job_id),
     trigger=end_trigger,
   )
+  remove_bonspiel_draws(job_id)
+  add_bonspiel_draws(job_id, draws, settings)
   flash('Job updated successfully!')
 
 @admin.route('/bonspiel_scheduler', methods=['GET', 'POST'])
@@ -440,22 +500,15 @@ def manage_bonspiel_schedule():
   jobs = [
       {
         "id": job.id,
-        "start_dt": datetime(year=int(str(job.trigger.fields[0])),
-                             month=int(str(job.trigger.fields[1])),
-                             day=int(str(job.trigger.fields[2])),
-                             hour=int(str(job.trigger.fields[5])),
-                             minute=int(str(job.trigger.fields[6]))),
-        "end_dt": datetime(year=int(str(scheduler.get_job("{:s}_end".format(job.id)).trigger.fields[0])),
-                           month=int(str(scheduler.get_job("{:s}_end".format(job.id)).trigger.fields[1])),
-                           day=int(str(scheduler.get_job("{:s}_end".format(job.id)).trigger.fields[2])),
-                           hour=int(str(scheduler.get_job("{:s}_end".format(job.id)).trigger.fields[5])),
-                           minute=int(str(scheduler.get_job("{:s}_end".format(job.id)).trigger.fields[6]))),
+        "start_dt": cron_trigger_datetime(job.trigger),
+        "end_dt": cron_trigger_datetime(scheduler.get_job("{:s}_end".format(job.id)).trigger),
         "time_to_chime": job.args[1],
         "time_per_end": job.args[2],
         "stones_per_end": job.args[3],
         "timer_count_in": job.args[4],
         "allow_ot": job.args[5],
-        "count_direction": job.args[6]
+        "count_direction": job.args[6],
+        "draws": sorted(cron_trigger_datetime(draw.trigger) for draw in bonspiel_draw_jobs(job.id))
       } for job in jobs
   ]
   return render_template("admin/bonspiel_scheduler.html", jobs=jobs)
@@ -681,25 +734,27 @@ def view_schedule():
   bonspiel_jobs = filter(lambda j: j.name == "bonspiel_start", scheduler.get_jobs(jobstore='bonspiel'))
   if bonspiel_jobs:
     for start_job in bonspiel_jobs:
-      start_dt = datetime(year=int(str(start_job.trigger.fields[0])),
-                           month=int(str(start_job.trigger.fields[1])),
-                           day=int(str(start_job.trigger.fields[2])),
-                           hour=int(str(start_job.trigger.fields[5])),
-                           minute=int(str(start_job.trigger.fields[6])))
+      start_dt = cron_trigger_datetime(start_job.trigger)
       end_job = scheduler.get_job("{:s}_end".format(start_job.id))
-      end_dt = datetime(year=int(str(end_job.trigger.fields[0])),
-                         month=int(str(end_job.trigger.fields[1])),
-                         day=int(str(end_job.trigger.fields[2])),
-                         hour=int(str(end_job.trigger.fields[5])),
-                         minute=int(str(end_job.trigger.fields[6])))
+      end_dt = cron_trigger_datetime(end_job.trigger)
 
-      jobs = filter(lambda j: not (start_dt < j.next_run_time.replace(tzinfo=None) < end_dt), jobs)
+      jobs = [job for job in jobs
+              if job.name == "bonspiel_draw" or not (start_dt < job.next_run_time.replace(tzinfo=None) < end_dt)]
+
+  def schedule_description(job):
+    if job.name == "league":
+      return "{} league".format(job.args[0])
+    if job.name == "bonspiel_start":
+      return "bonspiel start"
+    if job.name == "bonspiel_draw":
+      return "{} draw".format(job.args[0])
+    return "bonspiel end"
 
   jobs = [
       {
         "id": job.id,
         "next_run_time": job.next_run_time,
-        "description": "{} league".format(job.args[0]) if job.name == "league" else "bonspiel start" if job.name == "bonspiel_start" else "bonspiel end"
+        "description": schedule_description(job)
       } for job in jobs
   ]
 
