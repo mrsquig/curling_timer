@@ -73,7 +73,7 @@ def start_bonspiel_draw(job_id, time_to_chime, time_per_end, stones_per_end, tim
   if response.status_code != 200:
     logger.error("Failed to start timer for {} draw: {}".format(job_id, response.text))
 
-def end_bonspiel(job_id):
+def end_bonspiel(job_id, bonspiel=None):
   logger.info("Ending {} bonspiel and resetting to league defaults.".format(job_id))
   # Set timer back to league defaults
   requests.get('http://localhost:5000/update?key={}&value={}'.format("game_type", "league"))
