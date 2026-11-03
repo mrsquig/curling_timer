@@ -6,6 +6,7 @@ from PIL import Image
 from functools import wraps
 import numpy as np
 import unittest
+from unittest import mock
 import io
 import os
 import logging
@@ -256,6 +257,53 @@ class TestIceClock(unittest.TestCase):
     self.assertEqual((10, 0, 0), self._corner_color(styles, num_ends - 1, 0.5))
     self.assertEqual((0, 10, 0), self._corner_color(styles, num_ends, 0.5))
     self.assertEqual((0, 0, 10), self._corner_color(styles, num_ends, 0.5, allow_overtime=True))
+
+  def test_update_time_bonspiel_uses_api_clock(self):
+    game_times = {
+      "times": {
+        "end_number": 9,
+        "end_percentage": 0.1,
+        "is_overtime": True,
+        "uptime": 7000,
+        "total_time": 6000,
+        "hours": 1,
+        "minutes": 6,
+        "seconds": 40,
+      },
+      "config": {
+        "game_type": "bonspiel",
+        "num_ends": 8,
+        "time_per_end": 900,
+        "allow_overtime": True,
+        "time_to_chime": 6000,
+        "count_in": 0,
+        "is_game_complete": False,
+        "is_timer_running": True,
+        "stones_per_end": 8,
+      },
+    }
+    # /config serializes each ConfigValue as {"value": ...}, unlike /game_times.
+    raw_config = {key: {"value": value} for key, value in game_times["config"].items()}
+
+    def fake_get(url, *args, **kwargs):
+      class Response:
+        def __init__(self, payload):
+          self._payload = payload
+        def json(self):
+          return self._payload
+      if url.endswith("/config"):
+        return Response(raw_config)
+      return Response(game_times)
+
+    app.HOST_IP = "127.0.0.1"
+    app.SERVER_PORT = "5000"
+    with mock.patch("app.requests.get", side_effect=fake_get):
+      self.clock.update_time()
+
+    self.assertEqual(1, self.clock._hours)
+    self.assertEqual(6, self.clock._minutes)
+    self.assertEqual(40, self.clock._seconds)
+    self.assertEqual(-1, self.clock.warning_level)
 
   @set_golden_path
   def test_doubles_10stones(self, golden_path=None):

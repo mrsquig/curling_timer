@@ -291,7 +291,7 @@ class IceClock:
     self._uptime = times["uptime"]
     self._total_time = times["total_time"]
 
-    if self.config["game_type"] == "bonspiel":
+    if self._server_config["game_type"] == "bonspiel":
       self._hours = times["hours"]
       self._minutes = times["minutes"]
       self._seconds = times["seconds"]
