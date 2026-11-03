@@ -2,6 +2,9 @@
     "colors":
     {
         "SCREEN_BG": [0, 0, 0],
+        "SCREEN_BG_WARNING_1": [0, 0, 0],
+        "SCREEN_BG_WARNING_2": [0, 0, 0],
+        "SCREEN_BG_OT": [0, 0, 0],
         "TEXT": [255, 255, 255],
         "TEXT_WARNING_1": [255, 204, 42],
         "TEXT_WARNING_2": [160, 80, 40],

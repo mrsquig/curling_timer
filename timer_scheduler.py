@@ -34,9 +34,8 @@ def start_one_time_job(profile):
 
   start_timer(profile)
 
-def start_bonspiel(job_id, time_to_chime, time_per_end, stones_per_end, timer_count_in, allow_ot, count_direction):
-  # Load settings for bonspiel
-  settings = [
+def bonspiel_settings(time_to_chime, time_per_end, stones_per_end, timer_count_in, allow_ot, count_direction):
+  return [
     {"key": "game_type", "value": "bonspiel"},
     {"key": "time_per_end", "value": time_per_end},
     {"key": "stones_per_end", "value": stones_per_end},
@@ -45,12 +44,36 @@ def start_bonspiel(job_id, time_to_chime, time_per_end, stones_per_end, timer_co
     {"key": "allow_overtime", "value": int(allow_ot)},
     {"key": "count_direction", "value": count_direction}
   ]
-  logger.info("Starting {} bonspiel with settings:".format(job_id, settings))
+
+def apply_bonspiel_settings(settings):
   for setting in settings:
     logger.info(" - Setting {} to {}".format(setting["key"], setting["value"]))
-    requests.get('http://localhost:5000/update?key={}&value={}'.format(setting["key"], setting["value"]))
+    response = requests.get('http://localhost:5000/update?key={}&value={}'.format(setting["key"], setting["value"]))
+    if response.status_code != 200:
+      logger.error("Failed to set {} to {}: {}".format(setting["key"], setting["value"], response.text))
 
-def end_bonspiel(job_id):
+def start_bonspiel(job_id, time_to_chime, time_per_end, stones_per_end, timer_count_in, allow_ot, count_direction):
+  # Load settings for bonspiel. This switches the mode and does not start the clock.
+  settings = bonspiel_settings(time_to_chime, time_per_end, stones_per_end, timer_count_in, allow_ot, count_direction)
+  logger.info("Starting {} bonspiel with settings:".format(job_id))
+  apply_bonspiel_settings(settings)
+
+def start_bonspiel_draw(job_id, time_to_chime, time_per_end, stones_per_end, timer_count_in, allow_ot, count_direction):
+  # Reset before writing config. Updates are rejected while a bonspiel timer is running,
+  # and reset also clears count-in, which the settings below restore.
+  logger.info("Starting draw for {} bonspiel.".format(job_id))
+  response = requests.get('http://localhost:5000/reset')
+  if response.status_code != 200:
+    logger.error("Failed to reset timer before {} draw: {}".format(job_id, response.text))
+
+  settings = bonspiel_settings(time_to_chime, time_per_end, stones_per_end, timer_count_in, allow_ot, count_direction)
+  apply_bonspiel_settings(settings)
+
+  response = requests.get('http://localhost:5000/start')
+  if response.status_code != 200:
+    logger.error("Failed to start timer for {} draw: {}".format(job_id, response.text))
+
+def end_bonspiel(job_id, bonspiel=None):
   logger.info("Ending {} bonspiel and resetting to league defaults.".format(job_id))
   # Set timer back to league defaults
   requests.get('http://localhost:5000/update?key={}&value={}'.format("game_type", "league"))
@@ -58,14 +81,16 @@ def end_bonspiel(job_id):
   requests.get('http://localhost:5000/reset')
 
 def refresh_jobs():
-  """Reload new jobs from the job store."""
+  """Reload a persistent job store when its stored job ids differ from the loaded ones."""
   for key, jobstore in jobstores.items():
+    if key == "memory":
+      continue
+
     logger.debug("Refreshing jobs from jobstore: {}".format(key))
     loaded_jobs = {job.id for job in scheduler.get_jobs(jobstore=key)}
     stored_jobs = {job.id for job in jobstore.get_all_jobs()}
 
-    new_jobs = stored_jobs - loaded_jobs
-    if new_jobs:
+    if stored_jobs != loaded_jobs:
       scheduler.remove_jobstore(key)
       scheduler.add_jobstore(jobstores[key], alias=key)
 

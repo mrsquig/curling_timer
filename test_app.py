@@ -6,6 +6,7 @@ from PIL import Image
 from functools import wraps
 import numpy as np
 import unittest
+from unittest import mock
 import io
 import os
 import logging
@@ -212,6 +213,97 @@ class TestIceClock(unittest.TestCase):
     self.clock._uptime = self.clock._server_config["time_per_end"] * (end_num-1+end_percentage)
     img_io = render_app(self.clock, end_num, end_percentage)
     self.image_test(img_io, golden_path)
+
+  def _screen_styles(self, screen_bg, extra_colors=None):
+    colors = {"SCREEN_BG": screen_bg}
+    if extra_colors:
+      colors.update(extra_colors)
+    return {
+      "colors": colors,
+      "parameters": {
+        "color_every_nth": 2,
+        "divider_size": 5,
+        "bar_border_size": 5
+      }
+    }
+
+  def _corner_color(self, styles, end_num, end_percentage, allow_overtime=False):
+    self.clock.__init__(styles=styles, headless=True)
+    self.clock._server_config = {k: v.value for k, v in server_config.items()}
+    self.clock._server_config["allow_overtime"] = allow_overtime
+    self.clock._server_config["game_type"] = "league"
+    self.clock._server_config["count_in"] = 0
+    img_io = render_app(self.clock, end_num, end_percentage)
+    return Image.open(img_io).getpixel((0, 0))[:3]
+
+  def test_warning_background_defaults_to_screen_bg(self):
+    screen_bg = (12, 34, 56)
+    styles = self._screen_styles(screen_bg)
+    num_ends = server_config["num_ends"].value
+    self.assertEqual(screen_bg, self._corner_color(styles, num_ends - 1, 0.5))
+    self.assertEqual(1, self.clock.warning_level)
+    self.assertEqual(screen_bg, self._corner_color(styles, num_ends, 0.5))
+    self.assertEqual(2, self.clock.warning_level)
+    self.assertEqual(screen_bg, self._corner_color(styles, num_ends, 0.5, allow_overtime=True))
+    self.assertEqual(-1, self.clock.warning_level)
+
+  def test_warning_background_uses_style_colors(self):
+    styles = self._screen_styles((1, 2, 3), {
+      "SCREEN_BG_WARNING_1": (10, 0, 0),
+      "SCREEN_BG_WARNING_2": (0, 10, 0),
+      "SCREEN_BG_OT": (0, 0, 10)
+    })
+    num_ends = server_config["num_ends"].value
+    self.assertEqual((10, 0, 0), self._corner_color(styles, num_ends - 1, 0.5))
+    self.assertEqual((0, 10, 0), self._corner_color(styles, num_ends, 0.5))
+    self.assertEqual((0, 0, 10), self._corner_color(styles, num_ends, 0.5, allow_overtime=True))
+
+  def test_update_time_bonspiel_uses_api_clock(self):
+    game_times = {
+      "times": {
+        "end_number": 9,
+        "end_percentage": 0.1,
+        "is_overtime": True,
+        "uptime": 7000,
+        "total_time": 6000,
+        "hours": 1,
+        "minutes": 6,
+        "seconds": 40,
+      },
+      "config": {
+        "game_type": "bonspiel",
+        "num_ends": 8,
+        "time_per_end": 900,
+        "allow_overtime": True,
+        "time_to_chime": 6000,
+        "count_in": 0,
+        "is_game_complete": False,
+        "is_timer_running": True,
+        "stones_per_end": 8,
+      },
+    }
+    # /config serializes each ConfigValue as {"value": ...}, unlike /game_times.
+    raw_config = {key: {"value": value} for key, value in game_times["config"].items()}
+
+    def fake_get(url, *args, **kwargs):
+      class Response:
+        def __init__(self, payload):
+          self._payload = payload
+        def json(self):
+          return self._payload
+      if url.endswith("/config"):
+        return Response(raw_config)
+      return Response(game_times)
+
+    app.HOST_IP = "127.0.0.1"
+    app.SERVER_PORT = "5000"
+    with mock.patch("app.requests.get", side_effect=fake_get):
+      self.clock.update_time()
+
+    self.assertEqual(1, self.clock._hours)
+    self.assertEqual(6, self.clock._minutes)
+    self.assertEqual(40, self.clock._seconds)
+    self.assertEqual(-1, self.clock.warning_level)
 
   @set_golden_path
   def test_doubles_10stones(self, golden_path=None):

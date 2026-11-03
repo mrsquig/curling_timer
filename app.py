@@ -63,8 +63,19 @@ def color_factory(colors=None):
   for key in remove_keys:
     colors.pop(key)
 
+  screen_bg = colors["SCREEN_BG"] if "SCREEN_BG" in colors else default_styles["colors"]["SCREEN_BG"]
+
+  def screen_background(key):
+    # A style that omits a warning or overtime background keeps its own screen background.
+    if key in colors:
+      return colors[key]
+    return screen_bg
+
   class Color(Enum):
-    SCREEN_BG = colors["SCREEN_BG"] if "SCREEN_BG" in colors else default_styles["colors"]["SCREEN_BG"]
+    SCREEN_BG = screen_bg
+    SCREEN_BG_WARNING_1 = screen_background("SCREEN_BG_WARNING_1")
+    SCREEN_BG_WARNING_2 = screen_background("SCREEN_BG_WARNING_2")
+    SCREEN_BG_OT = screen_background("SCREEN_BG_OT")
     TEXT = colors["TEXT"] if "TEXT" in colors else default_styles["colors"]["TEXT"]
     TEXT_WARNING_1 = colors["TEXT_WARNING_1"] if "TEXT_WARNING_1" in colors else default_styles["colors"]["TEXT_WARNING_1"]
     TEXT_WARNING_2 = colors["TEXT_WARNING_2"] if "TEXT_WARNING_2" in colors else default_styles["colors"]["TEXT_WARNING_2"]
@@ -280,7 +291,7 @@ class IceClock:
     self._uptime = times["uptime"]
     self._total_time = times["total_time"]
 
-    if self.config["game_type"] == "bonspiel":
+    if self._server_config["game_type"] == "bonspiel":
       self._hours = times["hours"]
       self._minutes = times["minutes"]
       self._seconds = times["seconds"]
@@ -306,6 +317,18 @@ class IceClock:
       color = Color.TEXT_WARNING_2.value
     else:
       color = Color.OT.value
+
+    return color
+
+  def get_screen_color(self):
+    if not self.warning_level:
+      color = Color.SCREEN_BG.value
+    elif self.warning_level == 1:
+      color = Color.SCREEN_BG_WARNING_1.value
+    elif self.warning_level == 2:
+      color = Color.SCREEN_BG_WARNING_2.value
+    else:
+      color = Color.SCREEN_BG_OT.value
 
     return color
 
@@ -561,7 +584,7 @@ class IceClock:
     '''
 
     self.update_styles()
-    self.screen.fill(Color.SCREEN_BG.value)
+    self.screen.fill(self.get_screen_color())
     if not self._server_config["count_in"]:
       self.render_end_progress_bar()
     #elf.render_end_progress_labels()

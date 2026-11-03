@@ -7,6 +7,18 @@
                 <input type="color" id="screen_bg" name="screen_bg" value={{styles.colors.SCREEN_BG}} />
             </div>
             <div class="form-group">
+                <label for="screen_bg_warning_1">First warning background:</label>
+                <input type="color" id="screen_bg_warning_1" name="screen_bg_warning_1" value={{styles.colors.SCREEN_BG_WARNING_1}} />
+            </div>
+            <div class="form-group">
+                <label for="screen_bg_warning_2">Second warning background:</label>
+                <input type="color" id="screen_bg_warning_2" name="screen_bg_warning_2" value={{styles.colors.SCREEN_BG_WARNING_2}} />
+            </div>
+            <div class="form-group">
+                <label for="screen_bg_ot">Overtime background:</label>
+                <input type="color" id="screen_bg_ot" name="screen_bg_ot" value={{styles.colors.SCREEN_BG_OT}} />
+            </div>
+            <div class="form-group">
                 <label for="text_color">Main text color:</label>
                 <input type="color" id="text_color" name="text_color" value={{styles.colors.TEXT}} />
             </div>
@@ -98,6 +110,9 @@ function get_form_data() {
                     "colors":
                     {
                         'SCREEN_BG': hexToRgb(document.forms['styles_form']['screen_bg'].value),
+                        'SCREEN_BG_WARNING_1': hexToRgb(document.forms['styles_form']['screen_bg_warning_1'].value),
+                        'SCREEN_BG_WARNING_2': hexToRgb(document.forms['styles_form']['screen_bg_warning_2'].value),
+                        'SCREEN_BG_OT': hexToRgb(document.forms['styles_form']['screen_bg_ot'].value),
                         'TEXT': hexToRgb(document.forms['styles_form']['text_color'].value),
                         'TEXT_WARNING_1': hexToRgb(document.forms['styles_form']['text_warning_1'].value),
                         'TEXT_WARNING_2': hexToRgb(document.forms['styles_form']['text_warning_2'].value),
