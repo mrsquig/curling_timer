@@ -682,7 +682,8 @@ class IceClock:
       # If there are messages, then update the UI more frequently. Otherwise,
       # update once per second.
       if not self._messages:
-        time.sleep(1)
+        # Sleep for the remaining time to the next second + 20ms
+        time.sleep(1.02 - time.time() % 1)
 
   def teardown(self):
     '''
