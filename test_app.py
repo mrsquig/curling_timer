@@ -258,6 +258,20 @@ class TestIceClock(unittest.TestCase):
     self.assertEqual((0, 10, 0), self._corner_color(styles, num_ends, 0.5))
     self.assertEqual((0, 0, 10), self._corner_color(styles, num_ends, 0.5, allow_overtime=True))
 
+  def test_overtime_text_uses_text_ot(self):
+    num_ends = server_config["num_ends"].value
+    styles = self._screen_styles((0, 0, 0), {"TEXT_OT": (1, 2, 3), "OT": (9, 9, 9)})
+    self._corner_color(styles, num_ends, 0.5, allow_overtime=True)
+    self.assertEqual(-1, self.clock.warning_level)
+    self.assertEqual((1, 2, 3), self.clock.get_text_color())
+
+  def test_overtime_text_falls_back_to_ot(self):
+    num_ends = server_config["num_ends"].value
+    styles = self._screen_styles((0, 0, 0), {"OT": (4, 5, 6)})
+    self._corner_color(styles, num_ends, 0.5, allow_overtime=True)
+    self.assertEqual(-1, self.clock.warning_level)
+    self.assertEqual((4, 5, 6), self.clock.get_text_color())
+
   def test_update_time_bonspiel_uses_api_clock(self):
     game_times = {
       "times": {

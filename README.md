@@ -137,7 +137,8 @@ The following keys can be defined:
 |TEXT | Main text color | (255, 255, 255)   |
 |TEXT_END_MINUS1 | Text color used for the second to last end | (255, 204, 42) |
 |TEXT_LASTEND | Text color used for the last end | (160, 80, 40) |
-|OT | Overtime text color and progress bar foreground color | (160, 80, 40) |
+|TEXT_OT | Text color during overtime. Uses OT when omitted. | (160, 80, 40) |
+|OT | Fallback overtime text color when TEXT_OT is omitted | (160, 80, 40) |
 
 The following parameters can be defined:
 | Key | Description | Default value |

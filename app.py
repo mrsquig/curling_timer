@@ -79,6 +79,7 @@ def color_factory(colors=None):
     TEXT = colors["TEXT"] if "TEXT" in colors else default_styles["colors"]["TEXT"]
     TEXT_WARNING_1 = colors["TEXT_WARNING_1"] if "TEXT_WARNING_1" in colors else default_styles["colors"]["TEXT_WARNING_1"]
     TEXT_WARNING_2 = colors["TEXT_WARNING_2"] if "TEXT_WARNING_2" in colors else default_styles["colors"]["TEXT_WARNING_2"]
+    TEXT_OT = colors["TEXT_OT"] if "TEXT_OT" in colors else colors["OT"] if "OT" in colors else default_styles["colors"]["TEXT_OT"]
     BAR_FG1 = colors["BAR_FG1"] if "BAR_FG1" in colors else default_styles["colors"]["BAR_FG1"]
     BAR_FG2 = colors["BAR_FG2"] if "BAR_FG2" in colors else default_styles["colors"]["BAR_FG2"]
     BAR_BG = colors["BAR_BG"] if "BAR_BG" in colors else default_styles["colors"]["BAR_BG"]
@@ -316,7 +317,7 @@ class IceClock:
     elif self.warning_level == 2:
       color = Color.TEXT_WARNING_2.value
     else:
-      color = Color.OT.value
+      color = Color.TEXT_OT.value
 
     return color
 
