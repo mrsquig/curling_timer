@@ -176,6 +176,16 @@ class TestIceClock(unittest.TestCase):
     self.image_test(img_io, golden_path)
 
   @set_golden_path
+  def test_spiel_last_end(self, golden_path=None):
+    end_num = 8
+    end_percentage = 0.5
+    self.clock._server_config["game_type"] = "bonspiel"
+    self.clock._server_config["time_to_chime"] = 6000
+    self.clock._server_config["is_game_complete"] = False
+    img_io = render_app(self.clock, end_num, end_percentage)
+    self.image_test(img_io, golden_path)
+
+  @set_golden_path
   def test_spiel_before_chime(self, golden_path=None):
     end_num = 7
     end_percentage = 0.5

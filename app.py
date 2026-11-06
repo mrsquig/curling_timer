@@ -349,6 +349,8 @@ class IceClock:
     is_last_end = self._end_number >= self._server_config["num_ends"]
     if self._server_config["game_type"] == "bonspiel" and self._server_config["is_game_complete"]:
       text = self.fonts["last_end"].render("GAME OVER", True, color)
+    elif self._server_config["game_type"] == "bonspiel" and is_last_end:
+      text = self.fonts["last_end"].render("LAST END", True, color)
     elif self._server_config["game_type"] == "bonspiel" and self._uptime >= self._server_config["time_to_chime"]:
       text = self.fonts["last_end"].render("FINISH END +1", True, color)
     elif self.warning_level == 2 and not self._server_config["game_type"] == "bonspiel" and not self._is_overtime:
